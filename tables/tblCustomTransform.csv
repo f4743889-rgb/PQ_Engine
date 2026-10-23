@@ -1,0 +1,6 @@
+﻿CustomTransform;Опис;Use;Sequence
+Upper;усі символи ВЕЛИКІ;TRUE;1
+Lower;усі символи малі;FALSE;
+CleanSpaces;схлопує повторні пробіли, нерозривний пробіл вважає звичайним;TRUE;2
+NumText;прибирає пробіли й нерозривні пробіли в «числах із розрядами» (1 234,56);TRUE;3
+NullToZero;перетворює у Power Query значення null на 0;FALSE;

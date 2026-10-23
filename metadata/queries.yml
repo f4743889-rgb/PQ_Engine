@@ -1,0 +1,604 @@
+﻿queries:
+  - name: "pq_GenerateSchemaTemplate"
+    file: "../queries/pq_GenerateSchemaTemplate.pq"
+    group: "04 Каталог і дрейф схеми"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "fn_LoadConfig"
+      - "fn_ActiveSources"
+      - "fn_ResolveSource"
+      - "fn_ParseHeaders"
+      - "fn_Options"
+      - "fn_TemplateColumns"
+
+  - name: "pq_ExtractedColumns"
+    file: "../queries/pq_ExtractedColumns.pq"
+    group: "04 Каталог і дрейф схеми"
+    type: "Transform"
+    loads_to_table: "tblSchemaColumns"
+    depends_on:
+      - "pq_GenerateSchemaTemplate"
+
+  - name: "pq_SchemaIssues"
+    file: "../queries/pq_SchemaIssues.pq"
+    group: "04 Каталог і дрейф схеми"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "pq_GenerateSchemaTemplate"
+
+  - name: "cfgQueryGroups"
+    file: "../queries/cfgQueryGroups.pq"
+    group: "00 Конфігурація"
+    type: "Standalone"
+    loads_to_table: ""
+    depends_on: []
+
+  - name: "cfgSettings"
+    file: "../queries/cfgSettings.pq"
+    group: "00 Конфігурація"
+    type: "Standalone"
+    loads_to_table: ""
+    depends_on: []
+
+  - name: "cfgTypeMap"
+    file: "../queries/cfgTypeMap.pq"
+    group: "00 Конфігурація"
+    type: "Standalone"
+    loads_to_table: ""
+    depends_on: []
+
+  - name: "cfgTransforms"
+    file: "../queries/cfgTransforms.pq"
+    group: "00 Конфігурація"
+    type: "Standalone"
+    loads_to_table: ""
+    depends_on: []
+
+  - name: "cfgReportTypes"
+    file: "../queries/cfgReportTypes.pq"
+    group: "00 Конфігурація"
+    type: "Standalone"
+    loads_to_table: ""
+    depends_on: []
+
+  - name: "cfgStatuses"
+    file: "../queries/cfgStatuses.pq"
+    group: "00 Конфігурація"
+    type: "Standalone"
+    loads_to_table: ""
+    depends_on: []
+
+  - name: "fn_LoadConfig"
+    file: "../queries/fn_LoadConfig.pq"
+    group: "00 Конфігурація"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "cfgSettings"
+      - "fn_NormalizeSchema"
+      - "fn_NormalizeRowFilters"
+
+  - name: "fn_NormalizeSchema"
+    file: "../queries/fn_NormalizeSchema.pq"
+    group: "00 Конфігурація"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "fn_Canon"
+      - "cfgSettings"
+      - "fn_ToBool"
+
+  - name: "fn_NormalizeRowFilters"
+    file: "../queries/fn_NormalizeRowFilters.pq"
+    group: "00 Конфігурація"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "fn_Canon"
+      - "cfgSettings"
+      - "fn_ToBool"
+
+  - name: "src_SchemaRegistry"
+    file: "../queries/src_SchemaRegistry.pq"
+    group: "00 Конфігурація"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "fn_LoadConfig"
+
+  - name: "fn_ToBool"
+    file: "../queries/fn_ToBool.pq"
+    group: "01 Утиліти"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "cfgSettings"
+
+  - name: "fn_ToRate"
+    file: "../queries/fn_ToRate.pq"
+    group: "01 Утиліти"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "cfgSettings"
+
+  - name: "fn_Opt"
+    file: "../queries/fn_Opt.pq"
+    group: "01 Утиліти"
+    type: "Function"
+    loads_to_table: ""
+    depends_on: []
+
+  - name: "fn_Canon"
+    file: "../queries/fn_Canon.pq"
+    group: "01 Утиліти"
+    type: "Function"
+    loads_to_table: ""
+    depends_on: []
+
+  - name: "fn_ActiveSources"
+    file: "../queries/fn_ActiveSources.pq"
+    group: "02 Читання джерел"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "fn_ToBool"
+      - "fn_Canon"
+      - "cfgSettings"
+
+  - name: "fn_SourcePath"
+    file: "../queries/fn_SourcePath.pq"
+    group: "02 Читання джерел"
+    type: "Function"
+    loads_to_table: ""
+    depends_on: []
+
+  - name: "fn_Options"
+    file: "../queries/fn_Options.pq"
+    group: "02 Читання джерел"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "fn_Opt"
+      - "cfgSettings"
+
+  - name: "fn_ResolveSource"
+    file: "../queries/fn_ResolveSource.pq"
+    group: "02 Читання джерел"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "fn_SourcePath"
+
+  - name: "fn_ParseSource"
+    file: "../queries/fn_ParseSource.pq"
+    group: "02 Читання джерел"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "cfgSettings"
+
+  - name: "fn_ParseHeaders"
+    file: "../queries/fn_ParseHeaders.pq"
+    group: "02 Читання джерел"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "cfgSettings"
+      - "fn_ParseSource"
+
+  - name: "fn_ReadSource"
+    file: "../queries/fn_ReadSource.pq"
+    group: "02 Читання джерел"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "fn_ToBool"
+      - "fn_ResolveSource"
+      - "fn_Options"
+      - "fn_ParseSource"
+
+  - name: "fn_ReadPurpose"
+    file: "../queries/fn_ReadPurpose.pq"
+    group: "07 Призначення"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "fn_Canon"
+      - "cfgSettings"
+      - "fn_GetSchemaRules"
+      - "fn_ActiveSources"
+      - "fn_Opt"
+      - "fn_RegistryIssues"
+      - "fn_EnforceSchema"
+      - "fn_ReadSource"
+      - "fn_EffectiveSettings"
+
+  - name: "q_Registry"
+    file: "../queries/q_Registry.pq"
+    group: "07 Призначення"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "fn_ReadPurpose"
+      - "fn_LoadConfig"
+
+  - name: "fn_TemplateColumns"
+    file: "../queries/fn_TemplateColumns.pq"
+    group: "02 Читання джерел"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "cfgSettings"
+
+  - name: "fn_TypeKey"
+    file: "../queries/fn_TypeKey.pq"
+    group: "01 Утиліти"
+    type: "Function"
+    loads_to_table: ""
+    depends_on: []
+
+  - name: "pq_SchemaDrift"
+    file: "../queries/pq_SchemaDrift.pq"
+    group: "04 Каталог і дрейф схеми"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "pq_ExtractedColumns"
+      - "src_SchemaRegistry"
+      - "fn_ToBool"
+
+  - name: "fn_GetSchemaRules"
+    file: "../queries/fn_GetSchemaRules.pq"
+    group: "05 Нормалізація"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "cfgTransforms"
+      - "fn_TypeKey"
+      - "cfgTypeMap"
+
+  - name: "fn_ApplyRowFilters"
+    file: "../queries/fn_ApplyRowFilters.pq"
+    group: "05 Нормалізація"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "cfgSettings"
+      - "fn_ToBool"
+
+  - name: "fn_ApplyRulesEx"
+    file: "../queries/fn_ApplyRulesEx.pq"
+    group: "05 Нормалізація"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "cfgSettings"
+      - "fn_ApplyRowFilters"
+
+  - name: "fn_ApplyRules"
+    file: "../queries/fn_ApplyRules.pq"
+    group: "05 Нормалізація"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "fn_ApplyRulesEx"
+
+  - name: "fn_EffectiveSettings"
+    file: "../queries/fn_EffectiveSettings.pq"
+    group: "05 Нормалізація"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "fn_Opt"
+      - "cfgSettings"
+      - "fn_ToRate"
+
+  - name: "fn_LoadVerdict"
+    file: "../queries/fn_LoadVerdict.pq"
+    group: "05 Нормалізація"
+    type: "Function"
+    loads_to_table: ""
+    depends_on: []
+
+  - name: "fn_EnforceSchema"
+    file: "../queries/fn_EnforceSchema.pq"
+    group: "05 Нормалізація"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "fn_EffectiveSettings"
+      - "fn_ApplyRules"
+      - "fn_LoadVerdict"
+      - "cfgSettings"
+
+  - name: "fn_RegistryIssues"
+    file: "../queries/fn_RegistryIssues.pq"
+    group: "03 Перевірка налаштувань"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "fn_ToBool"
+      - "cfgSettings"
+      - "fn_ActiveSources"
+      - "fn_Opt"
+      - "fn_SourcePath"
+      - "fn_ToRate"
+
+  - name: "pq_RegistryCheck"
+    file: "../queries/pq_RegistryCheck.pq"
+    group: "03 Перевірка налаштувань"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "fn_RegistryIssues"
+      - "fn_LoadConfig"
+
+  - name: "pq_SchemaCheck"
+    file: "../queries/pq_SchemaCheck.pq"
+    group: "03 Перевірка налаштувань"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "src_SchemaRegistry"
+      - "cfgTransforms"
+      - "cfgTypeMap"
+      - "fn_TypeKey"
+      - "cfgSettings"
+
+  - name: "fn_SchemaReport"
+    file: "../queries/fn_SchemaReport.pq"
+    group: "06 Якість даних"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "fn_ApplyRulesEx"
+      - "fn_ColumnNullCounts"
+      - "cfgReportTypes"
+
+  - name: "fn_RowReport"
+    file: "../queries/fn_RowReport.pq"
+    group: "06 Якість даних"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "fn_ToBool"
+      - "cfgReportTypes"
+      - "fn_EffectiveSettings"
+      - "cfgStatuses"
+      - "fn_LoadVerdict"
+      - "fn_ResolveSource"
+      - "fn_ParseSource"
+      - "fn_Options"
+      - "fn_SchemaReport"
+
+  - name: "fn_QcReports"
+    file: "../queries/fn_QcReports.pq"
+    group: "06 Якість даних"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "fn_ActiveSources"
+      - "fn_GetSchemaRules"
+      - "fn_RowReport"
+
+  - name: "fn_SummaryTable"
+    file: "../queries/fn_SummaryTable.pq"
+    group: "06 Якість даних"
+    type: "Function"
+    loads_to_table: ""
+    depends_on:
+      - "cfgReportTypes"
+      - "cfgStatuses"
+
+  - name: "qc_Reports"
+    file: "../queries/qc_Reports.pq"
+    group: "06 Якість даних"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "fn_QcReports"
+      - "fn_LoadConfig"
+
+  - name: "pq_QualitySummary"
+    file: "../queries/pq_QualitySummary.pq"
+    group: "06 Якість даних"
+    type: "Transform"
+    loads_to_table: "pq_QualitySummary"
+    depends_on:
+      - "fn_SummaryTable"
+      - "qc_Reports"
+
+  - name: "pq_QualityColumns"
+    file: "../queries/pq_QualityColumns.pq"
+    group: "06 Якість даних"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "cfgReportTypes"
+      - "qc_Reports"
+
+  - name: "pq_QualityErrors"
+    file: "../queries/pq_QualityErrors.pq"
+    group: "06 Якість даних"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "cfgReportTypes"
+      - "qc_Reports"
+
+  - name: "Calendar"
+    file: "../queries/Calendar.pq"
+    group: "08 Модель і звіт"
+    type: "Parameter"
+    loads_to_table: ""
+    depends_on:
+      - "cfgSettings"
+
+  - name: "fxReadNamedCell"
+    file: "../queries/fxReadNamedCell.pq"
+    group: "08 Модель і звіт"
+    type: "Function"
+    loads_to_table: ""
+    depends_on: []
+
+  - name: "targetReportCell"
+    file: "../queries/targetReportCell.pq"
+    group: "08 Модель і звіт"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "fxReadNamedCell"
+      - "cfgSettings"
+
+  - name: "test_All"
+    file: "../queries/test_All.pq"
+    group: "99 Тести"
+    type: "Transform"
+    loads_to_table: "tbl_test_All"
+    depends_on:
+      - "test_Summary"
+      - "test_Load"
+      - "test_ToRate"
+      - "test_Canon"
+      - "test_LoadVerdict"
+      - "test_RegistryIssues"
+      - "test_Extensions"
+      - "test_NullCounts"
+      - "test_RowFilters"
+
+  - name: "test_Summary"
+    file: "../queries/test_Summary.pq"
+    group: "99 Тести"
+    type: "Parameter"
+    loads_to_table: "tbl_test_Summary"
+    depends_on:
+      - "fn_SummaryTable"
+      - "fn_QcReports"
+      - "fn_LoadConfig"
+
+  - name: "test_Load"
+    file: "../queries/test_Load.pq"
+    group: "99 Тести"
+    type: "Parameter"
+    loads_to_table: "tbl_test_Load"
+    depends_on:
+      - "fn_LoadConfig"
+      - "fn_ReadPurpose"
+
+  - name: "test_ToRate"
+    file: "../queries/test_ToRate.pq"
+    group: "99 Тести"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "fn_ToRate"
+
+  - name: "test_Canon"
+    file: "../queries/test_Canon.pq"
+    group: "99 Тести"
+    type: "Parameter"
+    loads_to_table: ""
+    depends_on:
+      - "fn_Canon"
+
+  - name: "test_LoadVerdict"
+    file: "../queries/test_LoadVerdict.pq"
+    group: "99 Тести"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "fn_LoadVerdict"
+
+  - name: "test_RegistryIssues"
+    file: "../queries/test_RegistryIssues.pq"
+    group: "99 Тести"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "fn_RegistryIssues"
+
+  - name: "test_Extensions"
+    file: "../queries/test_Extensions.pq"
+    group: "99 Тести"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "cfgSettings"
+      - "fn_ParseSource"
+      - "fn_ParseHeaders"
+
+  - name: "test_RowFilters"
+    file: "../queries/test_RowFilters.pq"
+    group: "99 Тести"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "fn_ApplyRowFilters"
+
+  - name: "test_RowFiltersReal"
+    file: "../queries/test_RowFiltersReal.pq"
+    group: "99 Тести"
+    type: "Parameter"
+    loads_to_table: ""
+    depends_on:
+      - "cfgSettings"
+      - "fn_ActiveSources"
+      - "fn_Opt"
+      - "fn_ReadSource"
+      - "fn_ApplyRowFilters"
+
+  - name: "pq_RowFiltersCheck"
+    file: "../queries/pq_RowFiltersCheck.pq"
+    group: "03 Перевірка налаштувань"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "fn_LoadConfig"
+
+  - name: "zz_diag_ReportCost"
+    file: "../queries/zz_diag_ReportCost.pq"
+    group: ""
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "fn_LoadConfig"
+      - "fn_ActiveSources"
+      - "fn_GetSchemaRules"
+      - "fn_EffectiveSettings"
+      - "fn_ReadSource"
+      - "fn_ApplyRulesEx"
+      - "fn_SchemaReport"
+      - "fn_RowReport"
+
+  - name: "zz_diag_SourceCost"
+    file: "../queries/zz_diag_SourceCost.pq"
+    group: ""
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "fn_LoadConfig"
+      - "fn_ActiveSources"
+      - "fn_QcReports"
+      - "fn_ReadSource"
+      - "fn_GetSchemaRules"
+      - "fn_ApplyRulesEx"
+      - "fn_EffectiveSettings"
+
+  - name: "fn_ColumnNullCounts"
+    file: "../queries/fn_ColumnNullCounts.pq"
+    group: "06 Якість даних"
+    type: "Function"
+    loads_to_table: ""
+    depends_on: []
+
+  - name: "test_NullCounts"
+    file: "../queries/test_NullCounts.pq"
+    group: "99 Тести"
+    type: "Transform"
+    loads_to_table: ""
+    depends_on:
+      - "fn_ColumnNullCounts"
+
