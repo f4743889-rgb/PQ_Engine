@@ -2,32 +2,32 @@ Attribute VB_Name = "modExportPowerQueryCodesToRepo"
 Option Explicit
 
 ' ============================================================================
-' modExportPowerQueryCodesToRepo: експорт коду Power Query і таблиць конфігурації для Git
-' (етап D, аудит D13). Потребує modEngineCommon.
+' modExportPowerQueryCodesToRepo: РµРєСЃРїРѕСЂС‚ РєРѕРґСѓ Power Query С– С‚Р°Р±Р»РёС†СЊ РєРѕРЅС„С–РіСѓСЂР°С†С–С— РґР»СЏ Git
+' (РµС‚Р°Рї D, Р°СѓРґРёС‚ D13). РџРѕС‚СЂРµР±СѓС” modEngineCommon.
 '
-' Структура поруч із книгою:
-'   powerquery\queries\<ім'я>.pq     код кожного запиту (UTF-8)
-'   powerquery\metadata\queries.yml  тека (group, з cfgQueryGroups), тип запиту, таблиця
-'                                    завантаження, залежності
-'   powerquery\tables\<таблиця>.csv  таблиці книги, які заповнюють вручну (реєстр, схема,
-'                                    фільтри, довідники); таблиці-результати запитів не
-'                                    експортуються, бо відтворюються оновленням; журнал
-'                                    tblRunLog теж ні (EXCLUDED_TABLES)
-' Перед експортом старі .pq і .csv видаляються, тож Git бачить і видалені запити чи таблиці.
-' Клітинки з формулами експортуються формулою (наприклад, Path = =TestDir).
+' РЎС‚СЂСѓРєС‚СѓСЂР° РїРѕСЂСѓС‡ С–Р· РєРЅРёРіРѕСЋ:
+'   powerquery\queries\<С–Рј'СЏ>.pq     РєРѕРґ РєРѕР¶РЅРѕРіРѕ Р·Р°РїРёС‚Сѓ (UTF-8)
+'   powerquery\metadata\queries.yml  С‚РµРєР° (group, Р· cfgQueryGroups), С‚РёРї Р·Р°РїРёС‚Сѓ, С‚Р°Р±Р»РёС†СЏ
+'                                    Р·Р°РІР°РЅС‚Р°Р¶РµРЅРЅСЏ, Р·Р°Р»РµР¶РЅРѕСЃС‚С–
+'   powerquery\tables\<С‚Р°Р±Р»РёС†СЏ>.csv  С‚Р°Р±Р»РёС†С– РєРЅРёРіРё, СЏРєС– Р·Р°РїРѕРІРЅСЋСЋС‚СЊ РІСЂСѓС‡РЅСѓ (СЂРµС”СЃС‚СЂ, СЃС…РµРјР°,
+'                                    С„С–Р»СЊС‚СЂРё, РґРѕРІС–РґРЅРёРєРё); С‚Р°Р±Р»РёС†С–-СЂРµР·СѓР»СЊС‚Р°С‚Рё Р·Р°РїРёС‚С–РІ РЅРµ
+'                                    РµРєСЃРїРѕСЂС‚СѓСЋС‚СЊСЃСЏ, Р±Рѕ РІС–РґС‚РІРѕСЂСЋСЋС‚СЊСЃСЏ РѕРЅРѕРІР»РµРЅРЅСЏРј; Р¶СѓСЂРЅР°Р»
+'                                    tblRunLog С‚РµР¶ РЅС– (EXCLUDED_TABLES)
+' РџРµСЂРµРґ РµРєСЃРїРѕСЂС‚РѕРј СЃС‚Р°СЂС– .pq С– .csv РІРёРґР°Р»СЏСЋС‚СЊСЃСЏ, С‚РѕР¶ Git Р±Р°С‡РёС‚СЊ С– РІРёРґР°Р»РµРЅС– Р·Р°РїРёС‚Рё С‡Рё С‚Р°Р±Р»РёС†С–.
+' РљР»С–С‚РёРЅРєРё Р· С„РѕСЂРјСѓР»Р°РјРё РµРєСЃРїРѕСЂС‚СѓСЋС‚СЊСЃСЏ С„РѕСЂРјСѓР»РѕСЋ (РЅР°РїСЂРёРєР»Р°Рґ, Path = =TestDir).
 '
-' Відмінності від попередньої версії: залежності шукаються за точними ідентифікаторами M
-' без коментарів і текстових літералів (раніше fn_Opt «знаходився» в fn_Options, а все після
-' першого // у рядку з vbLf губилося); додано тип Function і вивантаження таблиць у CSV.
+' Р’С–РґРјС–РЅРЅРѕСЃС‚С– РІС–Рґ РїРѕРїРµСЂРµРґРЅСЊРѕС— РІРµСЂСЃС–С—: Р·Р°Р»РµР¶РЅРѕСЃС‚С– С€СѓРєР°СЋС‚СЊСЃСЏ Р·Р° С‚РѕС‡РЅРёРјРё С–РґРµРЅС‚РёС„С–РєР°С‚РѕСЂР°РјРё M
+' Р±РµР· РєРѕРјРµРЅС‚Р°СЂС–РІ С– С‚РµРєСЃС‚РѕРІРёС… Р»С–С‚РµСЂР°Р»С–РІ (СЂР°РЅС–С€Рµ fn_Opt В«Р·РЅР°С…РѕРґРёРІСЃСЏВ» РІ fn_Options, Р° РІСЃРµ РїС–СЃР»СЏ
+' РїРµСЂС€РѕРіРѕ // Сѓ СЂСЏРґРєСѓ Р· vbLf РіСѓР±РёР»РѕСЃСЏ); РґРѕРґР°РЅРѕ С‚РёРї Function С– РІРёРІР°РЅС‚Р°Р¶РµРЅРЅСЏ С‚Р°Р±Р»РёС†СЊ Сѓ CSV.
 ' ============================================================================
 
-' Таблиці, які не експортуються: журнал запусків накопичує історію і змінюється щоразу
+' РўР°Р±Р»РёС†С–, СЏРєС– РЅРµ РµРєСЃРїРѕСЂС‚СѓСЋС‚СЊСЃСЏ: Р¶СѓСЂРЅР°Р» Р·Р°РїСѓСЃРєС–РІ РЅР°РєРѕРїРёС‡СѓС” С–СЃС‚РѕСЂС–СЋ С– Р·РјС–РЅСЋС”С‚СЊСЃСЏ С‰РѕСЂР°Р·Сѓ
 Private Const EXCLUDED_TABLES As String = "|tblRunLog|"
 
-' Карта тек з cfgQueryGroups (заповнює LoadQueryGroups)
-Private mGroups As Object        ' ім'я запиту -> тека
-Private mPrefixes As Collection  ' елементи Array(префікс, тека)
-Private mUnmapped As String      ' запити без теки (для підсумку)
+' РљР°СЂС‚Р° С‚РµРє Р· cfgQueryGroups (Р·Р°РїРѕРІРЅСЋС” LoadQueryGroups)
+Private mGroups As Object        ' С–Рј'СЏ Р·Р°РїРёС‚Сѓ -> С‚РµРєР°
+Private mPrefixes As Collection  ' РµР»РµРјРµРЅС‚Рё Array(РїСЂРµС„С–РєСЃ, С‚РµРєР°)
+Private mUnmapped As String      ' Р·Р°РїРёС‚Рё Р±РµР· С‚РµРєРё (РґР»СЏ РїС–РґСЃСѓРјРєСѓ)
 Private mUnmappedN As Long
 Private Const GROUPS_QUERY As String = "cfgQueryGroups"
 
@@ -37,7 +37,7 @@ Public Sub ExportPowerQueriesToRepo()
 
     root = ThisWorkbook.path
     If root = "" Then
-        MsgBox "Спершу збережіть книгу: файли експортуються в теку поруч із нею.", vbExclamation
+        MsgBox "РЎРїРµСЂС€Сѓ Р·Р±РµСЂРµР¶С–С‚СЊ РєРЅРёРіСѓ: С„Р°Р№Р»Рё РµРєСЃРїРѕСЂС‚СѓСЋС‚СЊСЃСЏ РІ С‚РµРєСѓ РїРѕСЂСѓС‡ С–Р· РЅРµСЋ.", vbExclamation
         Exit Sub
     End If
     qDir = root & "\powerquery\queries"
@@ -61,7 +61,7 @@ Public Sub ExportPowerQueriesToRepo()
 
     For Each ws In ThisWorkbook.Worksheets
         For Each lo In ws.ListObjects
-            ' лише звичайні таблиці (не результати запитів) і не журнали (історія, а не конфігурація)
+            ' Р»РёС€Рµ Р·РІРёС‡Р°Р№РЅС– С‚Р°Р±Р»РёС†С– (РЅРµ СЂРµР·СѓР»СЊС‚Р°С‚Рё Р·Р°РїРёС‚С–РІ) С– РЅРµ Р¶СѓСЂРЅР°Р»Рё (С–СЃС‚РѕСЂС–СЏ, Р° РЅРµ РєРѕРЅС„С–РіСѓСЂР°С†С–СЏ)
             If lo.SourceType = xlSrcRange And InStr(1, EXCLUDED_TABLES, "|" & lo.Name & "|", vbTextCompare) = 0 Then
                 engWriteUtf8 tDir & "\" & engSafeFileName(lo.Name) & ".csv", TableToCsv(lo)
                 nT = nT + 1
@@ -69,15 +69,15 @@ Public Sub ExportPowerQueriesToRepo()
         Next lo
     Next ws
 
-    MsgBox "Експортовано:" & vbCrLf & _
-           "запитів Power Query: " & nQ & vbCrLf & _
-           "таблиць конфігурації: " & nT & vbCrLf & _
+    MsgBox "Р•РєСЃРїРѕСЂС‚РѕРІР°РЅРѕ:" & vbCrLf & _
+           "Р·Р°РїРёС‚С–РІ Power Query: " & nQ & vbCrLf & _
+           "С‚Р°Р±Р»РёС†СЊ РєРѕРЅС„С–РіСѓСЂР°С†С–С—: " & nT & vbCrLf & _
            IIf(groupsNote <> "", vbCrLf & groupsNote & vbCrLf, "") & _
-           IIf(mUnmappedN > 0, vbCrLf & "Без теки в " & GROUPS_QUERY & " (" & mUnmappedN & "):" & mUnmapped & vbCrLf, "") & _
+           IIf(mUnmappedN > 0, vbCrLf & "Р‘РµР· С‚РµРєРё РІ " & GROUPS_QUERY & " (" & mUnmappedN & "):" & mUnmapped & vbCrLf, "") & _
            vbCrLf & root & "\powerquery", IIf(mUnmappedN > 0 Or groupsNote <> "", vbExclamation, vbInformation), "Export complete"
     Exit Sub
 Fail:
-    MsgBox "Помилка експорту: " & Err.Description, vbCritical, "Export"
+    MsgBox "РџРѕРјРёР»РєР° РµРєСЃРїРѕСЂС‚Сѓ: " & Err.Description, vbCritical, "Export"
 End Sub
 
 ' ================== queries.yml ==================
@@ -120,9 +120,9 @@ Private Function BuildQueriesYaml() As String
     BuildQueriesYaml = txt
 End Function
 
-' ================== Теки (cfgQueryGroups) ==================
-' Читає Groups (#"тека" = {"запит", ...}) і Prefixes (префікс = "тека") з тексту cfgQueryGroups.
-' Повертає "" або попередження.
+' ================== РўРµРєРё (cfgQueryGroups) ==================
+' Р§РёС‚Р°С” Groups (#"С‚РµРєР°" = {"Р·Р°РїРёС‚", ...}) С– Prefixes (РїСЂРµС„С–РєСЃ = "С‚РµРєР°") Р· С‚РµРєСЃС‚Сѓ cfgQueryGroups.
+' РџРѕРІРµСЂС‚Р°С” "" Р°Р±Рѕ РїРѕРїРµСЂРµРґР¶РµРЅРЅСЏ.
 Private Function LoadQueryGroups() As String
     Dim f As String, re As Object, rq As Object, rp As Object, it As Object, nm As Object, grp As String
 
@@ -135,7 +135,7 @@ Private Function LoadQueryGroups() As String
     f = ThisWorkbook.Queries(GROUPS_QUERY).formula
     On Error GoTo 0
     If f = "" Then
-        LoadQueryGroups = "Запит " & GROUPS_QUERY & " не знайдено: поле group у queries.yml порожнє."
+        LoadQueryGroups = "Р—Р°РїРёС‚ " & GROUPS_QUERY & " РЅРµ Р·РЅР°Р№РґРµРЅРѕ: РїРѕР»Рµ group Сѓ queries.yml РїРѕСЂРѕР¶РЅС”."
         Exit Function
     End If
     f = engStripMComments(f)
@@ -165,10 +165,10 @@ Private Function LoadQueryGroups() As String
         Next it
     End If
 
-    If mGroups.Count = 0 Then LoadQueryGroups = "У " & GROUPS_QUERY & " не знайдено жодної теки (Groups)."
+    If mGroups.Count = 0 Then LoadQueryGroups = "РЈ " & GROUPS_QUERY & " РЅРµ Р·РЅР°Р№РґРµРЅРѕ Р¶РѕРґРЅРѕС— С‚РµРєРё (Groups)."
 End Function
 
-' Тека запиту: точне ім'я в Groups, інакше перший відповідний префікс; "" = не задано
+' РўРµРєР° Р·Р°РїРёС‚Сѓ: С‚РѕС‡РЅРµ С–Рј'СЏ РІ Groups, С–РЅР°РєС€Рµ РїРµСЂС€РёР№ РІС–РґРїРѕРІС–РґРЅРёР№ РїСЂРµС„С–РєСЃ; "" = РЅРµ Р·Р°РґР°РЅРѕ
 Private Function GroupOf(queryName As String) As String
     Dim p As Variant
     If Not mGroups Is Nothing Then
@@ -183,7 +183,7 @@ Private Function GroupOf(queryName As String) As String
     If mUnmappedN <= 10 Then mUnmapped = mUnmapped & vbCrLf & "  * " & queryName
 End Function
 
-' Function | Source | Parameter | Transform | Standalone (за кодом без коментарів)
+' Function | Source | Parameter | Transform | Standalone (Р·Р° РєРѕРґРѕРј Р±РµР· РєРѕРјРµРЅС‚Р°СЂС–РІ)
 Private Function DetectQueryType(formula As String, hasDeps As Boolean) As String
     Dim f As String, fn As Variant
     f = LCase$(Trim$(Replace(Replace(engStripMComments(formula), vbCr, " "), vbLf, " ")))
@@ -210,7 +210,7 @@ Private Function YamlQuote(value As String) As String
 End Function
 
 ' ================== CSV ==================
-' Роздільник ";", рядок заголовків = назви колонок, числа з крапкою, дати ISO, формули як формули
+' Р РѕР·РґС–Р»СЊРЅРёРє ";", СЂСЏРґРѕРє Р·Р°РіРѕР»РѕРІРєС–РІ = РЅР°Р·РІРё РєРѕР»РѕРЅРѕРє, С‡РёСЃР»Р° Р· РєСЂР°РїРєРѕСЋ, РґР°С‚Рё ISO, С„РѕСЂРјСѓР»Рё СЏРє С„РѕСЂРјСѓР»Рё
 Private Function TableToCsv(lo As ListObject) As String
     Dim txt As String, ln As String, c As Range, r As Long
     For Each c In lo.HeaderRowRange.Cells
@@ -260,7 +260,7 @@ Private Function CsvQuote(s As String) As String
     End If
 End Function
 
-' Видалення файлів із розширенням ext у теці (без підтек)
+' Р’РёРґР°Р»РµРЅРЅСЏ С„Р°Р№Р»С–РІ С–Р· СЂРѕР·С€РёСЂРµРЅРЅСЏРј ext Сѓ С‚РµС†С– (Р±РµР· РїС–РґС‚РµРє)
 Private Sub ClearFolder(folderPath As String, ext As String)
     Dim fso As Object, f As Object, toDel As New Collection, p As Variant
     Set fso = CreateObject("Scripting.FileSystemObject")
