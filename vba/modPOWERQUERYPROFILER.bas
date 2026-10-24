@@ -2,25 +2,25 @@ Attribute VB_Name = "modPOWERQUERYPROFILER"
 Option Explicit
 
 ' ============================================================================
-' modPOWERQUERYPROFILER: час оновлення кожного підключення Power Query (етап D)
-' Потребує modEngineCommon.
+' modPOWERQUERYPROFILER: С‡Р°СЃ РѕРЅРѕРІР»РµРЅРЅСЏ РєРѕР¶РЅРѕРіРѕ РїС–РґРєР»СЋС‡РµРЅРЅСЏ Power Query (РµС‚Р°Рї D)
+' РџРѕС‚СЂРµР±СѓС” modEngineCommon.
 '
-' ProfilePowerQueries послідовно оновлює OLEDB-підключення книги й записує тривалість
-' кожного на аркуш PQ_Profiler (колонки ті самі, що й у попередній версії: історію
-' попередніх запусків можна не видаляти). Підсумок запуску - окремим рядком на аркуші
+' ProfilePowerQueries РїРѕСЃР»С–РґРѕРІРЅРѕ РѕРЅРѕРІР»СЋС” OLEDB-РїС–РґРєР»СЋС‡РµРЅРЅСЏ РєРЅРёРіРё Р№ Р·Р°РїРёСЃСѓС” С‚СЂРёРІР°Р»С–СЃС‚СЊ
+' РєРѕР¶РЅРѕРіРѕ РЅР° Р°СЂРєСѓС€ PQ_Profiler (РєРѕР»РѕРЅРєРё С‚С– СЃР°РјС–, С‰Рѕ Р№ Сѓ РїРѕРїРµСЂРµРґРЅС–Р№ РІРµСЂСЃС–С—: С–СЃС‚РѕСЂС–СЋ
+' РїРѕРїРµСЂРµРґРЅС–С… Р·Р°РїСѓСЃРєС–РІ РјРѕР¶РЅР° РЅРµ РІРёРґР°Р»СЏС‚Рё). РџС–РґСЃСѓРјРѕРє Р·Р°РїСѓСЃРєСѓ - РѕРєСЂРµРјРёРј СЂСЏРґРєРѕРј РЅР° Р°СЂРєСѓС€С–
 ' PQ_ProfilerSummary.
 '
-' Що змінилося порівняно з попередньою версією:
-'   * ім'я запиту береться з параметра Location рядка підключення, тож воно правильне і в
-'     англійському («Query - X»), і в українському («Запит – X») Excel;
-'   * підсумок більше не дописується під таблицею (раніше він потрапляв у сортування й
-'     перемішувався з даними); старі рядки SUMMARY видаляються автоматично при запуску;
-'   * сортування: новіші запуски зверху, у межах запуску - найдовші запити зверху;
-'   * колонка Notes: «лише підключення», якщо результат запиту нікуди не завантажується.
+' Р©Рѕ Р·РјС–РЅРёР»РѕСЃСЏ РїРѕСЂС–РІРЅСЏРЅРѕ Р· РїРѕРїРµСЂРµРґРЅСЊРѕСЋ РІРµСЂСЃС–С”СЋ:
+'   * С–Рј'СЏ Р·Р°РїРёС‚Сѓ Р±РµСЂРµС‚СЊСЃСЏ Р· РїР°СЂР°РјРµС‚СЂР° Location СЂСЏРґРєР° РїС–РґРєР»СЋС‡РµРЅРЅСЏ, С‚РѕР¶ РІРѕРЅРѕ РїСЂР°РІРёР»СЊРЅРµ С– РІ
+'     Р°РЅРіР»С–Р№СЃСЊРєРѕРјСѓ (В«Query - XВ»), С– РІ СѓРєСЂР°С—РЅСЃСЊРєРѕРјСѓ (В«Р—Р°РїРёС‚ вЂ“ XВ») Excel;
+'   * РїС–РґСЃСѓРјРѕРє Р±С–Р»СЊС€Рµ РЅРµ РґРѕРїРёСЃСѓС”С‚СЊСЃСЏ РїС–Рґ С‚Р°Р±Р»РёС†РµСЋ (СЂР°РЅС–С€Рµ РІС–РЅ РїРѕС‚СЂР°РїР»СЏРІ Сѓ СЃРѕСЂС‚СѓРІР°РЅРЅСЏ Р№
+'     РїРµСЂРµРјС–С€СѓРІР°РІСЃСЏ Р· РґР°РЅРёРјРё); СЃС‚Р°СЂС– СЂСЏРґРєРё SUMMARY РІРёРґР°Р»СЏСЋС‚СЊСЃСЏ Р°РІС‚РѕРјР°С‚РёС‡РЅРѕ РїСЂРё Р·Р°РїСѓСЃРєСѓ;
+'   * СЃРѕСЂС‚СѓРІР°РЅРЅСЏ: РЅРѕРІС–С€С– Р·Р°РїСѓСЃРєРё Р·РІРµСЂС…Сѓ, Сѓ РјРµР¶Р°С… Р·Р°РїСѓСЃРєСѓ - РЅР°Р№РґРѕРІС€С– Р·Р°РїРёС‚Рё Р·РІРµСЂС…Сѓ;
+'   * РєРѕР»РѕРЅРєР° Notes: В«Р»РёС€Рµ РїС–РґРєР»СЋС‡РµРЅРЅСЏВ», СЏРєС‰Рѕ СЂРµР·СѓР»СЊС‚Р°С‚ Р·Р°РїРёС‚Сѓ РЅС–РєСѓРґРё РЅРµ Р·Р°РІР°РЅС‚Р°Р¶СѓС”С‚СЊСЃСЏ.
 '
-' Важливо для читання результатів: кожне підключення оновлюється окремо, тому його час
-' включає обчислення всіх запитів, від яких воно залежить (кешу між оновленнями немає).
-' Сума тривалостей тому більша за час «Оновити все».
+' Р’Р°Р¶Р»РёРІРѕ РґР»СЏ С‡РёС‚Р°РЅРЅСЏ СЂРµР·СѓР»СЊС‚Р°С‚С–РІ: РєРѕР¶РЅРµ РїС–РґРєР»СЋС‡РµРЅРЅСЏ РѕРЅРѕРІР»СЋС”С‚СЊСЃСЏ РѕРєСЂРµРјРѕ, С‚РѕРјСѓ Р№РѕРіРѕ С‡Р°СЃ
+' РІРєР»СЋС‡Р°С” РѕР±С‡РёСЃР»РµРЅРЅСЏ РІСЃС–С… Р·Р°РїРёС‚С–РІ, РІС–Рґ СЏРєРёС… РІРѕРЅРѕ Р·Р°Р»РµР¶РёС‚СЊ (РєРµС€Сѓ РјС–Р¶ РѕРЅРѕРІР»РµРЅРЅСЏРјРё РЅРµРјР°С”).
+' РЎСѓРјР° С‚СЂРёРІР°Р»РѕСЃС‚РµР№ С‚РѕРјСѓ Р±С–Р»СЊС€Р° Р·Р° С‡Р°СЃ В«РћРЅРѕРІРёС‚Рё РІСЃРµВ».
 ' ============================================================================
 
 #If VBA7 Then
@@ -72,7 +72,7 @@ Public Sub ProfilePowerQueries()
         If IsOLEDBConnection(conn) Then total = total + 1
     Next conn
     If total = 0 Then
-        MsgBox "У книзі не знайдено OLEDB-підключень. Профілювати нічого.", vbExclamation, "Power Query Profiler"
+        MsgBox "РЈ РєРЅРёР·С– РЅРµ Р·РЅР°Р№РґРµРЅРѕ OLEDB-РїС–РґРєР»СЋС‡РµРЅСЊ. РџСЂРѕС„С–Р»СЋРІР°С‚Рё РЅС–С‡РѕРіРѕ.", vbExclamation, "Power Query Profiler"
         GoTo CleanExit
     End If
 
@@ -86,7 +86,7 @@ Public Sub ProfilePowerQueries()
             cName = conn.Name
             qName = QueryNameOf(conn)
             notes = ""
-            If engFindQueryTable(qName) Is Nothing And Not InModel(conn) Then notes = "лише підключення"
+            If engFindQueryTable(qName) Is Nothing And Not InModel(conn) Then notes = "Р»РёС€Рµ РїС–РґРєР»СЋС‡РµРЅРЅСЏ"
 
             Application.StatusBar = "Power Query Profiler: " & processed & "/" & total & " - " & qName
             DoEvents
@@ -120,19 +120,19 @@ Public Sub ProfilePowerQueries()
     WriteSummary wb, runNumber, startDateTime, processed, errCount, sumTime, slowName, slowTime
 
     Application.StatusBar = False
-    MsgBox "Профілювання завершено." & vbCrLf & vbCrLf & _
-           "Запуск № " & runNumber & vbCrLf & _
-           "Підключень: " & processed & IIf(errCount > 0, " (помилок: " & errCount & ")", "") & vbCrLf & _
-           "Сума тривалостей: " & Format$(sumTime, "0.0") & " с" & vbCrLf & _
-           "Найдовший: " & slowName & " (" & Format$(slowTime, "0.0") & " с)" & vbCrLf & _
-           IIf(removed > 0, vbCrLf & "Видалено старих рядків SUMMARY: " & removed & vbCrLf, "") & vbCrLf & _
-           "Аркуші: " & DATA_SHEET & ", " & SUMMARY_SHEET, _
+    MsgBox "РџСЂРѕС„С–Р»СЋРІР°РЅРЅСЏ Р·Р°РІРµСЂС€РµРЅРѕ." & vbCrLf & vbCrLf & _
+           "Р—Р°РїСѓСЃРє в„– " & runNumber & vbCrLf & _
+           "РџС–РґРєР»СЋС‡РµРЅСЊ: " & processed & IIf(errCount > 0, " (РїРѕРјРёР»РѕРє: " & errCount & ")", "") & vbCrLf & _
+           "РЎСѓРјР° С‚СЂРёРІР°Р»РѕСЃС‚РµР№: " & Format$(sumTime, "0.0") & " СЃ" & vbCrLf & _
+           "РќР°Р№РґРѕРІС€РёР№: " & slowName & " (" & Format$(slowTime, "0.0") & " СЃ)" & vbCrLf & _
+           IIf(removed > 0, vbCrLf & "Р’РёРґР°Р»РµРЅРѕ СЃС‚Р°СЂРёС… СЂСЏРґРєС–РІ SUMMARY: " & removed & vbCrLf, "") & vbCrLf & _
+           "РђСЂРєСѓС€С–: " & DATA_SHEET & ", " & SUMMARY_SHEET, _
            IIf(errCount > 0, vbExclamation, vbInformation), "Power Query Profiler"
     GoTo CleanExit
 
 FatalError:
     Application.StatusBar = False
-    MsgBox "Профілювання перервано." & vbCrLf & vbCrLf & "Помилка " & Err.Number & ":" & vbCrLf & _
+    MsgBox "РџСЂРѕС„С–Р»СЋРІР°РЅРЅСЏ РїРµСЂРµСЂРІР°РЅРѕ." & vbCrLf & vbCrLf & "РџРѕРјРёР»РєР° " & Err.Number & ":" & vbCrLf & _
            Err.Description, vbCritical, "Power Query Profiler"
 
 CleanExit:
@@ -143,7 +143,7 @@ CleanExit:
     Application.StatusBar = False
 End Sub
 
-' ================== ДОПОМІЖНІ ==================
+' ================== Р”РћРџРћРњР†Р–РќР† ==================
 Private Function IsOLEDBConnection(ByVal conn As WorkbookConnection) As Boolean
     On Error Resume Next
     IsOLEDBConnection = (conn.Type = xlConnectionTypeOLEDB)
@@ -156,13 +156,13 @@ Private Function InModel(ByVal conn As WorkbookConnection) As Boolean
     On Error GoTo 0
 End Function
 
-' Ім'я запиту: Location рядка підключення; якщо його немає - назва підключення без префікса
+' Р†Рј'СЏ Р·Р°РїРёС‚Сѓ: Location СЂСЏРґРєР° РїС–РґРєР»СЋС‡РµРЅРЅСЏ; СЏРєС‰Рѕ Р№РѕРіРѕ РЅРµРјР°С” - РЅР°Р·РІР° РїС–РґРєР»СЋС‡РµРЅРЅСЏ Р±РµР· РїСЂРµС„С–РєСЃР°
 Private Function QueryNameOf(ByVal conn As WorkbookConnection) As String
     Dim s As String, p As Long
     s = engQueryNameOf(conn)
     If s = "" Then
         s = conn.Name
-        ' «Query - X» або «Запит – X» (середнє тире; Excel ставить перед ним нерозривний пробіл)
+        ' В«Query - XВ» Р°Р±Рѕ В«Р—Р°РїРёС‚ вЂ“ XВ» (СЃРµСЂРµРґРЅС” С‚РёСЂРµ; Excel СЃС‚Р°РІРёС‚СЊ РїРµСЂРµРґ РЅРёРј РЅРµСЂРѕР·СЂРёРІРЅРёР№ РїСЂРѕР±С–Р»)
         s = Replace(s, ChrW(160), " ")
         p = InStr(s, " - ")
         If p = 0 Then p = InStr(s, " " & ChrW(8211) & " ")
@@ -185,8 +185,8 @@ Private Function GetDataSheet(ByVal wb As Workbook) As Worksheet
     Set GetDataSheet = ws
 End Function
 
-' Видаляє рядки, у яких колонка A не номер запуску (блоки SUMMARY попередньої версії і
-' порожні рядки між ними). Повертає кількість видалених непорожніх рядків.
+' Р’РёРґР°Р»СЏС” СЂСЏРґРєРё, Сѓ СЏРєРёС… РєРѕР»РѕРЅРєР° A РЅРµ РЅРѕРјРµСЂ Р·Р°РїСѓСЃРєСѓ (Р±Р»РѕРєРё SUMMARY РїРѕРїРµСЂРµРґРЅСЊРѕС— РІРµСЂСЃС–С— С–
+' РїРѕСЂРѕР¶РЅС– СЂСЏРґРєРё РјС–Р¶ РЅРёРјРё). РџРѕРІРµСЂС‚Р°С” РєС–Р»СЊРєС–СЃС‚СЊ РІРёРґР°Р»РµРЅРёС… РЅРµРїРѕСЂРѕР¶РЅС–С… СЂСЏРґРєС–РІ.
 Private Function RemoveLegacySummary(ByVal ws As Worksheet) As Long
     Dim lastRow As Long, i As Long, v As Variant
     lastRow = LastUsedRow(ws)
@@ -204,7 +204,7 @@ Private Function RemoveLegacySummary(ByVal ws As Worksheet) As Long
     Next i
 End Function
 
-' Останній рядок з будь-яким значенням у колонках A:I
+' РћСЃС‚Р°РЅРЅС–Р№ СЂСЏРґРѕРє Р· Р±СѓРґСЊ-СЏРєРёРј Р·РЅР°С‡РµРЅРЅСЏРј Сѓ РєРѕР»РѕРЅРєР°С… A:I
 Private Function LastUsedRow(ByVal ws As Worksheet) As Long
     Dim c As Range
     Set c = ws.Range("A:I").Find(What:="*", LookIn:=xlFormulas, SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
@@ -260,7 +260,7 @@ Private Sub FormatDataSheet(ByVal ws As Worksheet)
     End If
 End Sub
 
-' Новіші запуски зверху; у межах запуску - найдовші запити зверху
+' РќРѕРІС–С€С– Р·Р°РїСѓСЃРєРё Р·РІРµСЂС…Сѓ; Сѓ РјРµР¶Р°С… Р·Р°РїСѓСЃРєСѓ - РЅР°Р№РґРѕРІС€С– Р·Р°РїРёС‚Рё Р·РІРµСЂС…Сѓ
 Private Sub SortDataSheet(ByVal ws As Worksheet)
     Dim lastRow As Long
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
@@ -277,7 +277,7 @@ Private Sub SortDataSheet(ByVal ws As Worksheet)
     End With
 End Sub
 
-' Один рядок на запуск на окремому аркуші
+' РћРґРёРЅ СЂСЏРґРѕРє РЅР° Р·Р°РїСѓСЃРє РЅР° РѕРєСЂРµРјРѕРјСѓ Р°СЂРєСѓС€С–
 Private Sub WriteSummary(ByVal wb As Workbook, ByVal runNumber As Long, ByVal startDateTime As Date, _
                          ByVal n As Long, ByVal errCount As Long, ByVal sumTime As Double, _
                          ByVal slowName As String, ByVal slowTime As Double)

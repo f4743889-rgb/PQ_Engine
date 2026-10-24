@@ -2,34 +2,34 @@ Attribute VB_Name = "modEngineCommon"
 Option Explicit
 
 ' ============================================================================
-' modEngineCommon: спільні процедури макросів Power Query Engine (аудит D13)
+' modEngineCommon: СЃРїС–Р»СЊРЅС– РїСЂРѕС†РµРґСѓСЂРё РјР°РєСЂРѕСЃС–РІ Power Query Engine (Р°СѓРґРёС‚ D13)
 '
-' Імпортуйте разом із modSelectSourceFiles, modExportPowerQueryCodesToRepo,
-' modPOWERQUERYPROFILER, modRunLog, modCleanExportSelectedSheets: вони викликають
-' процедури eng* звідси. Самодостатніми навмисно лишаються modImportPowerQueryFromFolder
-' і modSetupTestEngine (ними збирають книгу з нуля).
+' Р†РјРїРѕСЂС‚СѓР№С‚Рµ СЂР°Р·РѕРј С–Р· modSelectSourceFiles, modExportPowerQueryCodesToRepo,
+' modPOWERQUERYPROFILER, modRunLog, modCleanExportSelectedSheets: РІРѕРЅРё РІРёРєР»РёРєР°СЋС‚СЊ
+' РїСЂРѕС†РµРґСѓСЂРё eng* Р·РІС–РґСЃРё. РЎР°РјРѕРґРѕСЃС‚Р°С‚РЅС–РјРё РЅР°РІРјРёСЃРЅРѕ Р»РёС€Р°СЋС‚СЊСЃСЏ modImportPowerQueryFromFolder
+' С– modSetupTestEngine (РЅРёРјРё Р·Р±РёСЂР°СЋС‚СЊ РєРЅРёРіСѓ Р· РЅСѓР»СЏ).
 '
-' Параметри Engine мають одне джерело - запит cfgSettings. engLoadSettings читає з його
-' тексту CsvDelimiter, CsvEncoding, TrueValues, Tables (імена таблиць) і Extensions;
-' engSetting("ключ") повертає значення, engTableName("Registry") - ім'я таблиці.
+' РџР°СЂР°РјРµС‚СЂРё Engine РјР°СЋС‚СЊ РѕРґРЅРµ РґР¶РµСЂРµР»Рѕ - Р·Р°РїРёС‚ cfgSettings. engLoadSettings С‡РёС‚Р°С” Р· Р№РѕРіРѕ
+' С‚РµРєСЃС‚Сѓ CsvDelimiter, CsvEncoding, TrueValues, Tables (С–РјРµРЅР° С‚Р°Р±Р»РёС†СЊ) С– Extensions;
+' engSetting("РєР»СЋС‡") РїРѕРІРµСЂС‚Р°С” Р·РЅР°С‡РµРЅРЅСЏ, engTableName("Registry") - С–Рј'СЏ С‚Р°Р±Р»РёС†С–.
 ' ============================================================================
 
 Public Const ENG_SETTINGS_QUERY As String = "cfgSettings"
 
-Private mSettings As Object      ' Scripting.Dictionary: ключ -> значення
-Private mNote As String          ' попередження останнього читання cfgSettings
+Private mSettings As Object      ' Scripting.Dictionary: РєР»СЋС‡ -> Р·РЅР°С‡РµРЅРЅСЏ
+Private mNote As String          ' РїРѕРїРµСЂРµРґР¶РµРЅРЅСЏ РѕСЃС‚Р°РЅРЅСЊРѕРіРѕ С‡РёС‚Р°РЅРЅСЏ cfgSettings
 
-' ================== ПАРАМЕТРИ З cfgSettings ==================
-' Повертає "" або текст попередження (які ключі не знайдено; для них діють аварійні значення)
+' ================== РџРђР РђРњР•РўР Р Р— cfgSettings ==================
+' РџРѕРІРµСЂС‚Р°С” "" Р°Р±Рѕ С‚РµРєСЃС‚ РїРѕРїРµСЂРµРґР¶РµРЅРЅСЏ (СЏРєС– РєР»СЋС‡С– РЅРµ Р·РЅР°Р№РґРµРЅРѕ; РґР»СЏ РЅРёС… РґС–СЋС‚СЊ Р°РІР°СЂС–Р№РЅС– Р·РЅР°С‡РµРЅРЅСЏ)
 Public Function engLoadSettings() As String
     Dim f As String, re As Object, rk As Object, it As Object, inner As String, lst As String, miss As String
 
     Set mSettings = CreateObject("Scripting.Dictionary")
     mSettings.CompareMode = vbTextCompare
-    ' аварійні значення: діють, лише якщо cfgSettings не вдалося прочитати
+    ' Р°РІР°СЂС–Р№РЅС– Р·РЅР°С‡РµРЅРЅСЏ: РґС–СЋС‚СЊ, Р»РёС€Рµ СЏРєС‰Рѕ cfgSettings РЅРµ РІРґР°Р»РѕСЃСЏ РїСЂРѕС‡РёС‚Р°С‚Рё
     mSettings("CsvDelimiter") = ";"
     mSettings("CsvEncoding") = 1251
-    mSettings("TrueValues") = "|true|1|так|yes|y|+|"
+    mSettings("TrueValues") = "|true|1|С‚Р°Рє|yes|y|+|"
     mSettings("Tables.Registry") = "tblSourceRegistry"
     mSettings("Tables.Schema") = "tblSchemaRegistry"
     mSettings("Tables.RowFilters") = "tblRowFilters"
@@ -44,7 +44,7 @@ Public Function engLoadSettings() As String
     f = ThisWorkbook.Queries(ENG_SETTINGS_QUERY).formula
     On Error GoTo 0
     If f = "" Then
-        mNote = "Запит " & ENG_SETTINGS_QUERY & " не знайдено в книзі; використано аварійні значення."
+        mNote = "Р—Р°РїРёС‚ " & ENG_SETTINGS_QUERY & " РЅРµ Р·РЅР°Р№РґРµРЅРѕ РІ РєРЅРёР·С–; РІРёРєРѕСЂРёСЃС‚Р°РЅРѕ Р°РІР°СЂС–Р№РЅС– Р·РЅР°С‡РµРЅРЅСЏ."
         engLoadSettings = mNote
         Exit Function
     End If
@@ -97,29 +97,29 @@ Public Function engLoadSettings() As String
         miss = miss & " Extensions"
     End If
 
-    If mSettings("CsvDelimiter") = "" Then mSettings("CsvDelimiter") = ";": miss = miss & " CsvDelimiter(порожній)"
-    If miss <> "" Then mNote = "У запиті " & ENG_SETTINGS_QUERY & " не знайдено:" & miss & _
-                               " (для них використано аварійні значення)."
+    If mSettings("CsvDelimiter") = "" Then mSettings("CsvDelimiter") = ";": miss = miss & " CsvDelimiter(РїРѕСЂРѕР¶РЅС–Р№)"
+    If miss <> "" Then mNote = "РЈ Р·Р°РїРёС‚С– " & ENG_SETTINGS_QUERY & " РЅРµ Р·РЅР°Р№РґРµРЅРѕ:" & miss & _
+                               " (РґР»СЏ РЅРёС… РІРёРєРѕСЂРёСЃС‚Р°РЅРѕ Р°РІР°СЂС–Р№РЅС– Р·РЅР°С‡РµРЅРЅСЏ)."
     engLoadSettings = mNote
 End Function
 
-' Значення параметра; при першому зверненні читає cfgSettings
+' Р—РЅР°С‡РµРЅРЅСЏ РїР°СЂР°РјРµС‚СЂР°; РїСЂРё РїРµСЂС€РѕРјСѓ Р·РІРµСЂРЅРµРЅРЅС– С‡РёС‚Р°С” cfgSettings
 Public Function engSetting(key As String) As Variant
     If mSettings Is Nothing Then engLoadSettings
     If mSettings.Exists(key) Then engSetting = mSettings(key) Else engSetting = Empty
 End Function
 
-' Ім'я таблиці книги з cfgSettings[Tables]: engTableName("Registry") -> "tblSourceRegistry"
+' Р†Рј'СЏ С‚Р°Р±Р»РёС†С– РєРЅРёРіРё Р· cfgSettings[Tables]: engTableName("Registry") -> "tblSourceRegistry"
 Public Function engTableName(key As String) As String
     engTableName = CStr(engSetting("Tables." & key))
 End Function
 
-' Попередження останнього engLoadSettings ("" = усе прочитано)
+' РџРѕРїРµСЂРµРґР¶РµРЅРЅСЏ РѕСЃС‚Р°РЅРЅСЊРѕРіРѕ engLoadSettings ("" = СѓСЃРµ РїСЂРѕС‡РёС‚Р°РЅРѕ)
 Public Function engSettingsNote() As String
     engSettingsNote = mNote
 End Function
 
-' Розширення, які читає Engine: kind = "Csv", "Excel" або "" (будь-яке з них)
+' Р РѕР·С€РёСЂРµРЅРЅСЏ, СЏРєС– С‡РёС‚Р°С” Engine: kind = "Csv", "Excel" Р°Р±Рѕ "" (Р±СѓРґСЊ-СЏРєРµ Р· РЅРёС…)
 Public Function engIsExtension(path As String, Optional kind As String = "") As Boolean
     Dim ext As String
     ext = "|" & LCase$(Mid$(path, InStrRev(path, ".") + 1)) & "|"
@@ -130,7 +130,7 @@ Public Function engIsExtension(path As String, Optional kind As String = "") As 
     End If
 End Function
 
-' Як fn_ToBool: порожнє = dflt, логічне як є, число <> 0, текст з cfgSettings[TrueValues]
+' РЇРє fn_ToBool: РїРѕСЂРѕР¶РЅС” = dflt, Р»РѕРіС–С‡РЅРµ СЏРє С”, С‡РёСЃР»Рѕ <> 0, С‚РµРєСЃС‚ Р· cfgSettings[TrueValues]
 Public Function engToBool(v As Variant, dflt As Boolean) As Boolean
     If IsError(v) Or IsEmpty(v) Or IsNull(v) Then engToBool = dflt: Exit Function
     If VarType(v) = vbBoolean Then engToBool = v: Exit Function
@@ -143,7 +143,7 @@ Public Function engToBool(v As Variant, dflt As Boolean) As Boolean
     End If
 End Function
 
-' Список рядків у лапках після «ключ = {...}» у вигляді "|a|b|"; "" якщо ключа немає
+' РЎРїРёСЃРѕРє СЂСЏРґРєС–РІ Сѓ Р»Р°РїРєР°С… РїС–СЃР»СЏ В«РєР»СЋС‡ = {...}В» Сѓ РІРёРіР»СЏРґС– "|a|b|"; "" СЏРєС‰Рѕ РєР»СЋС‡Р° РЅРµРјР°С”
 Private Function QuotedListAfter(src As String, key As String) As String
     Dim re As Object, rq As Object, it As Object, res As String
     Set re = CreateObject("VBScript.RegExp")
@@ -158,8 +158,8 @@ Private Function QuotedListAfter(src As String, key As String) As String
     If res <> "" Then QuotedListAfter = res & "|"
 End Function
 
-' ================== ТЕКСТ M ==================
-' Видаляє коментарі M (// до кінця рядка, /* ... */), не чіпаючи текст у лапках
+' ================== РўР•РљРЎРў M ==================
+' Р’РёРґР°Р»СЏС” РєРѕРјРµРЅС‚Р°СЂС– M (// РґРѕ РєС–РЅС†СЏ СЂСЏРґРєР°, /* ... */), РЅРµ С‡С–РїР°СЋС‡Рё С‚РµРєСЃС‚ Сѓ Р»Р°РїРєР°С…
 Public Function engStripMComments(src As String) As String
     Dim i As Long, n As Long, p As Long, ch As String, res As String, inQ As Boolean
     n = Len(src)
@@ -191,7 +191,7 @@ Public Function engStripMComments(src As String) As String
     engStripMComments = res
 End Function
 
-' Розекранування текстового літерала M: "" -> ", #(tab), #(lf), #(cr), #(#)
+' Р РѕР·РµРєСЂР°РЅСѓРІР°РЅРЅСЏ С‚РµРєСЃС‚РѕРІРѕРіРѕ Р»С–С‚РµСЂР°Р»Р° M: "" -> ", #(tab), #(lf), #(cr), #(#)
 Public Function engUnescapeM(ByVal t As String) As String
     t = Replace(t, """""", """")
     t = Replace(t, "#(tab)", vbTab, , , vbTextCompare)
@@ -201,8 +201,8 @@ Public Function engUnescapeM(ByVal t As String) As String
     engUnescapeM = t
 End Function
 
-' Ідентифікатори коду M (без коментарів і текстових літералів): звичайні і #"..."
-' Повертає Dictionary ім'я -> True; регістр важливий, як у M
+' Р†РґРµРЅС‚РёС„С–РєР°С‚РѕСЂРё РєРѕРґСѓ M (Р±РµР· РєРѕРјРµРЅС‚Р°СЂС–РІ С– С‚РµРєСЃС‚РѕРІРёС… Р»С–С‚РµСЂР°Р»С–РІ): Р·РІРёС‡Р°Р№РЅС– С– #"..."
+' РџРѕРІРµСЂС‚Р°С” Dictionary С–Рј'СЏ -> True; СЂРµРіС–СЃС‚СЂ РІР°Р¶Р»РёРІРёР№, СЏРє Сѓ M
 Public Function engMIdentifiers(mCode As String) As Object
     Dim res As Object, re As Object, it As Object
     Set res = CreateObject("Scripting.Dictionary")
@@ -220,7 +220,7 @@ Public Function engMIdentifiers(mCode As String) As Object
     Set engMIdentifiers = res
 End Function
 
-' ================== ТАБЛИЦІ ==================
+' ================== РўРђР‘Р›РР¦Р† ==================
 Public Function engFindTable(tblName As String) As ListObject
     Dim ws As Worksheet, lo As ListObject
     For Each ws In ThisWorkbook.Worksheets
@@ -237,14 +237,14 @@ Public Function engColumnExists(lo As ListObject, colName As String) As Boolean
     Next lc
 End Function
 
-' Значення клітинки рядка r таблиці; клітинка-помилка (#N/A тощо) = Empty
+' Р—РЅР°С‡РµРЅРЅСЏ РєР»С–С‚РёРЅРєРё СЂСЏРґРєР° r С‚Р°Р±Р»РёС†С–; РєР»С–С‚РёРЅРєР°-РїРѕРјРёР»РєР° (#N/A С‚РѕС‰Рѕ) = Empty
 Public Function engCell(lo As ListObject, r As Long, col As String) As Variant
     Dim v As Variant
     v = lo.ListColumns(col).DataBodyRange.Cells(r, 1).value
     If IsError(v) Then engCell = Empty Else engCell = v
 End Function
 
-' Значення необов'язкової колонки; якщо колонки немає, dflt
+' Р—РЅР°С‡РµРЅРЅСЏ РЅРµРѕР±РѕРІ'СЏР·РєРѕРІРѕС— РєРѕР»РѕРЅРєРё; СЏРєС‰Рѕ РєРѕР»РѕРЅРєРё РЅРµРјР°С”, dflt
 Public Function engCellOpt(lo As ListObject, r As Long, col As String, dflt As Variant) As Variant
     If engColumnExists(lo, col) Then engCellOpt = engCell(lo, r, col) Else engCellOpt = dflt
 End Function
@@ -253,7 +253,7 @@ Public Sub engSetCell(lo As ListObject, r As Long, col As String, v As Variant)
     lo.ListColumns(col).DataBodyRange.Cells(r, 1).value = v
 End Sub
 
-' Шлях як у fn_SourcePath: FullPath має пріоритет, інакше Path + FileName
+' РЁР»СЏС… СЏРє Сѓ fn_SourcePath: FullPath РјР°С” РїСЂС–РѕСЂРёС‚РµС‚, С–РЅР°РєС€Рµ Path + FileName
 Public Function engSourcePath(lo As ListObject, r As Long) As String
     Dim full As String, dir_ As String, nm As String
     full = Trim$(CStr(engCellOpt(lo, r, "FullPath", "")))
@@ -272,9 +272,9 @@ Public Function engSourcePath(lo As ListObject, r As Long) As String
     End If
 End Function
 
-' ================== ЗАПИТИ І ПІДКЛЮЧЕННЯ ==================
-' Ім'я запиту Power Query за підключенням: параметр Location рядка підключення
-' (не залежить від мови Excel, на відміну від назви «Query - X» / «Запит – X»)
+' ================== Р—РђРџРРўР Р† РџР†Р”РљР›Р®Р§Р•РќРќРЇ ==================
+' Р†Рј'СЏ Р·Р°РїРёС‚Сѓ Power Query Р·Р° РїС–РґРєР»СЋС‡РµРЅРЅСЏРј: РїР°СЂР°РјРµС‚СЂ Location СЂСЏРґРєР° РїС–РґРєР»СЋС‡РµРЅРЅСЏ
+' (РЅРµ Р·Р°Р»РµР¶РёС‚СЊ РІС–Рґ РјРѕРІРё Excel, РЅР° РІС–РґРјС–РЅСѓ РІС–Рґ РЅР°Р·РІРё В«Query - XВ» / В«Р—Р°РїРёС‚ вЂ“ XВ»)
 Public Function engQueryNameOf(cn As WorkbookConnection) As String
     Dim s As String, p As Long, q As Long
     On Error Resume Next
@@ -293,7 +293,7 @@ Public Function engQueryNameOf(cn As WorkbookConnection) As String
     End If
 End Function
 
-' Таблиця на аркуші, завантажена з запиту queryName (за Location підключення, інакше за CommandText)
+' РўР°Р±Р»РёС†СЏ РЅР° Р°СЂРєСѓС€С–, Р·Р°РІР°РЅС‚Р°Р¶РµРЅР° Р· Р·Р°РїРёС‚Сѓ queryName (Р·Р° Location РїС–РґРєР»СЋС‡РµРЅРЅСЏ, С–РЅР°РєС€Рµ Р·Р° CommandText)
 Public Function engFindQueryTable(queryName As String) As ListObject
     Dim ws As Worksheet, lo As ListObject, qn As String, cmd As String
     For Each ws In ThisWorkbook.Worksheets
@@ -304,8 +304,8 @@ Public Function engFindQueryTable(queryName As String) As ListObject
                 qn = engQueryNameOf(lo.QueryTable.WorkbookConnection)
                 cmd = CStr(lo.QueryTable.CommandText)
             ElseIf lo.SourceType = xlSrcModel Then
-                ' таблиця з моделі даних: підключення моделі не містить Location;
-                ' Excel називає таку таблицю за запитом (пробіли -> "_")
+                ' С‚Р°Р±Р»РёС†СЏ Р· РјРѕРґРµР»С– РґР°РЅРёС…: РїС–РґРєР»СЋС‡РµРЅРЅСЏ РјРѕРґРµР»С– РЅРµ РјС–СЃС‚РёС‚СЊ Location;
+                ' Excel РЅР°Р·РёРІР°С” С‚Р°РєСѓ С‚Р°Р±Р»РёС†СЋ Р·Р° Р·Р°РїРёС‚РѕРј (РїСЂРѕР±С–Р»Рё -> "_")
                 qn = engQueryNameOf(lo.TableObject.WorkbookConnection)
                 If qn = "" And StrComp(lo.Name, Replace(queryName, " ", "_"), vbTextCompare) = 0 Then qn = queryName
             End If
@@ -319,8 +319,8 @@ Public Function engFindQueryTable(queryName As String) As ListObject
     Next ws
 End Function
 
-' Завантажує запит на аркуш як таблицю (без оновлення: дані з'являться після «Оновити все»
-' або lo.QueryTable.Refresh). Якщо запит уже завантажено, повертає наявну таблицю.
+' Р—Р°РІР°РЅС‚Р°Р¶СѓС” Р·Р°РїРёС‚ РЅР° Р°СЂРєСѓС€ СЏРє С‚Р°Р±Р»РёС†СЋ (Р±РµР· РѕРЅРѕРІР»РµРЅРЅСЏ: РґР°РЅС– Р·'СЏРІР»СЏС‚СЊСЃСЏ РїС–СЃР»СЏ В«РћРЅРѕРІРёС‚Рё РІСЃРµВ»
+' Р°Р±Рѕ lo.QueryTable.Refresh). РЇРєС‰Рѕ Р·Р°РїРёС‚ СѓР¶Рµ Р·Р°РІР°РЅС‚Р°Р¶РµРЅРѕ, РїРѕРІРµСЂС‚Р°С” РЅР°СЏРІРЅСѓ С‚Р°Р±Р»РёС†СЋ.
 Public Function engLoadQueryToSheet(queryName As String, ws As Worksheet, topLeft As String) As ListObject
     Dim lo As ListObject
     Set lo = engFindQueryTable(queryName)
@@ -342,22 +342,22 @@ Public Function engLoadQueryToSheet(queryName As String, ws As Worksheet, topLef
         .PreserveColumnInfo = True
     End With
     On Error Resume Next
-    lo.QueryTable.WorkbookConnection.RefreshWithRefreshAll = True     ' оновлювати разом з «Оновити все»
+    lo.QueryTable.WorkbookConnection.RefreshWithRefreshAll = True     ' РѕРЅРѕРІР»СЋРІР°С‚Рё СЂР°Р·РѕРј Р· В«РћРЅРѕРІРёС‚Рё РІСЃРµВ»
     lo.Name = "tbl_" & queryName
     On Error GoTo 0
     Set engLoadQueryToSheet = lo
 End Function
 
-' Синхронне «Оновити все»: фонове оновлення вимикається і потім відновлюється.
-' Повертає "" або текст помилки. Помилки окремих запитів Excel показує власним вікном,
-' а не через Err, тому їх видно в pq_QualitySummary і журналі, а не тут.
+' РЎРёРЅС…СЂРѕРЅРЅРµ В«РћРЅРѕРІРёС‚Рё РІСЃРµВ»: С„РѕРЅРѕРІРµ РѕРЅРѕРІР»РµРЅРЅСЏ РІРёРјРёРєР°С”С‚СЊСЃСЏ С– РїРѕС‚С–Рј РІС–РґРЅРѕРІР»СЋС”С‚СЊСЃСЏ.
+' РџРѕРІРµСЂС‚Р°С” "" Р°Р±Рѕ С‚РµРєСЃС‚ РїРѕРјРёР»РєРё. РџРѕРјРёР»РєРё РѕРєСЂРµРјРёС… Р·Р°РїРёС‚С–РІ Excel РїРѕРєР°Р·СѓС” РІР»Р°СЃРЅРёРј РІС–РєРЅРѕРј,
+' Р° РЅРµ С‡РµСЂРµР· Err, С‚РѕРјСѓ С—С… РІРёРґРЅРѕ РІ pq_QualitySummary С– Р¶СѓСЂРЅР°Р»С–, Р° РЅРµ С‚СѓС‚.
 Public Function engRefreshAllSync() As String
     Dim cn As WorkbookConnection, bg As Object, nm As Variant, b As Boolean
     Set bg = CreateObject("Scripting.Dictionary")
     On Error Resume Next
     For Each cn In ThisWorkbook.Connections
         Err.Clear
-        b = cn.OLEDBConnection.BackgroundQuery          ' не всі підключення мають OLEDB
+        b = cn.OLEDBConnection.BackgroundQuery          ' РЅРµ РІСЃС– РїС–РґРєР»СЋС‡РµРЅРЅСЏ РјР°СЋС‚СЊ OLEDB
         If Err.Number = 0 Then bg(cn.Name) = b: cn.OLEDBConnection.BackgroundQuery = False
     Next cn
     Err.Clear
@@ -371,14 +371,14 @@ Public Function engRefreshAllSync() As String
     On Error GoTo 0
 End Function
 
-' ================== ФАЙЛИ ==================
+' ================== Р¤РђР™Р›Р ==================
 Public Function engFileExists(path As String) As Boolean
     On Error Resume Next
     engFileExists = (Len(path) > 0 And Dir(path) <> "")
     On Error GoTo 0
 End Function
 
-' Недопустимі в імені файла символи замінюються на "_"
+' РќРµРґРѕРїСѓСЃС‚РёРјС– РІ С–РјРµРЅС– С„Р°Р№Р»Р° СЃРёРјРІРѕР»Рё Р·Р°РјС–РЅСЋСЋС‚СЊСЃСЏ РЅР° "_"
 Public Function engSafeFileName(ByVal s As String) As String
     Dim ch As Variant
     For Each ch In Array("\", "/", ":", "*", "?", """", "<", ">", "|")
@@ -387,7 +387,7 @@ Public Function engSafeFileName(ByVal s As String) As String
     engSafeFileName = s
 End Function
 
-' Створює теку разом з усіма проміжними
+' РЎС‚РІРѕСЂСЋС” С‚РµРєСѓ СЂР°Р·РѕРј Р· СѓСЃС–РјР° РїСЂРѕРјС–Р¶РЅРёРјРё
 Public Sub engEnsureFolder(ByVal folderPath As String)
     Dim fso As Object
     Set fso = CreateObject("Scripting.FileSystemObject")
@@ -408,7 +408,7 @@ Public Function engReadUtf8(path As String) As String
     st.Close
 End Function
 
-' Запис тексту в UTF-8 (з BOM, як і раніше в експорті запитів)
+' Р—Р°РїРёСЃ С‚РµРєСЃС‚Сѓ РІ UTF-8 (Р· BOM, СЏРє С– СЂР°РЅС–С€Рµ РІ РµРєСЃРїРѕСЂС‚С– Р·Р°РїРёС‚С–РІ)
 Public Sub engWriteUtf8(path As String, txt As String)
     Dim st As Object
     Set st = CreateObject("ADODB.Stream")

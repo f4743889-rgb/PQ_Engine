@@ -1,2 +1,23 @@
+# Файли репозиторію створює макрос ExportPowerQueriesToRepo (modExportPowerQueryCodesToRepo).
+
+# Модулі VBA: VBE експортує їх в ANSI (cp1251). У Git вони зберігаються в UTF-8 (кирилицю видно
+# на GitHub і в diff), на диску після checkout - знову cp1251 і CRLF, як очікує Import у VBE.
+# Не завантажуйте .bas/.cls/.frm через вебінтерфейс GitHub: він записує cp1251 як є,
+# і checkout падає з «failed to encode ... from UTF-8 to CP1251». Лише git add / commit / push.
 *.bas text eol=crlf working-tree-encoding=CP1251
+*.cls text eol=crlf working-tree-encoding=CP1251
+*.frm text eol=crlf working-tree-encoding=CP1251
+*.frx binary
+
+# Код Power Query (UTF-8 з BOM)
 *.pq  text eol=crlf
+
+# CSV і yml зберігаються байт у байт, без перетворення закінчень рядків: у клітинках таблиць
+# бувають переноси рядків усередині лапок, а фікстури тестів навмисно мають різні кодування
+# (cp1251, UTF-8 з BOM і без), закінчення рядків і навіть «пошкоджені» файли
+*.csv  -text
+*.yml  -text
+*.json -text
+*.xlsx binary
+*.xlsm binary
+*.xls  binary
