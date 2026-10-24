@@ -94,7 +94,8 @@ let
                        List.Select(rules[Columns], each not _[Required] and not List.Contains(RawCols, _[Source])),
                        each _[Source]),
     EmptyCols = if nRows = 0 then {}
-                else List.Transform(List.Select(ColList, each _[NullCount] = nRows), each _[Target]),
+                // лише колонки, що є у файлі: відсутні необов'язкові вже в MissingOptional (аудит 1.6, v4.10)
+                else List.Transform(List.Select(ColList, each _[InSource] and _[NullCount] = nRows), each _[Target]),
 
     StatusCode =
         if raw = null then "NODATA"

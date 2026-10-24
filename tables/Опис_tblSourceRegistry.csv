@@ -10,3 +10,4 @@ PeriodNumber (Номер періоду);Data Validation (1..12, 1..4, 1);Дин
 IsRequired (Required);Logical (TRUE / FALSE);Якщо порожнє або TRUE, і файл відсутній — Power Query видає критичну помилку/стоп. Якщо FALSE — файл пропускається.
 Enabled;Logical (TRUE / FALSE);Дозволяє тимчасово відключати обробку окремого джерела без видалення рядка з таблиці.
 ErrorPolicy;Text;Визначає рівень суворості обробки помилок. Опис - у tblErrorPolicy
+ErrorThreshold;Number;Визначає поріг помилок у даних, після досягнення якого подальша обробка зупиняється

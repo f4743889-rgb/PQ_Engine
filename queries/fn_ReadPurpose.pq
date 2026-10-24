@@ -2,9 +2,9 @@
 // config: запис fn_LoadConfig() (Registry, Schema, RowFilters). Запит призначення:
 //   fn_ReadPurpose(fn_LoadConfig(), "Registry")
 // Частина реєстру (тести, підмножина джерел): fn_ReadPurpose(Cfg & [Registry = Підмножина], "Registry")
-// options (необов'язково): [Culture = "uk-UA", ErrorPolicy = "Strict", ErrorThreshold = 0.05,
-//                           AllowDuplicatePeriods = true, AllowDuplicateFiles = true]
-// ErrorPolicy і ErrorThreshold з реєстру мають пріоритет над options (fn_EffectiveSettings).
+// options (необов'язково): [Culture = "uk-UA", AllowDuplicatePeriods = true, AllowDuplicateFiles = true]
+// ErrorPolicy і ErrorThreshold задаються лише в реєстрі або cfgSettings (v4.10): options їх не змінюють,
+// щоб QualityFlag у звіті якості збігався з поведінкою завантаження.
 // Перевірки реєстру (дублі SourceID, файлу, періоду) - fn_RegistryIssues, ті самі, що в pq_RegistryCheck.
 (config as record, targetType as text, optional options as nullable record) as table =>
 let
@@ -32,13 +32,15 @@ let
              else
                  "Для '" & TT & "' кілька активних джерел мають однаковий період: " & Text.Combine(Keys, "; "),
 
-    // метадані джерела (після Enforcer, щоб не впливати на схему)
+    // метадані джерела (після Enforcer, щоб не впливати на схему); імена - cfgSettings[MetaColumns]
+    // (порядок: SourceID, PeriodType, PeriodNumber)
+    Meta    = cfgSettings[MetaColumns],
     AddMeta = (t as table, id as nullable text, pt as nullable text, pn as nullable number) as table =>
         Table.AddColumn(
             Table.AddColumn(
-                Table.AddColumn(t, "SourceID", each id, type text),
-                "PeriodType", each pt, type text),
-            "PeriodNumber", each pn, Int64.Type),
+                Table.AddColumn(t, Meta{0}, each id, type text),
+                Meta{1}, each pt, type text),
+            Meta{2}, each pn, Int64.Type),
 
     // одне джерело: читання → Enforcer → метадані
     Part = (r as record) as table =>

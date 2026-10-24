@@ -20,7 +20,8 @@ let
     Fail = (status as text, msg as nullable text) as record =>
         [Summary = Base & [Status = status, Message = msg], Columns = ColsEmpty, Errors = ErrsEmpty],
 
-    // індикатор якості: FAIL = завантаження через fn_ReadPurpose зупиниться, WARN = є помилки, OK.
+    // індикатор якості: FAIL = завантаження через fn_ReadPurpose зупиниться, WARN = є помилки, OK;
+    // BAD_THRESHOLD = ErrorThreshold джерела некоректний (fn_ToRate); порожньо = даних немає (NODATA).
     // Правило те саме, що в fn_EnforceSchema (fn_LoadVerdict), налаштування - fn_EffectiveSettings.
     Eff    = fn_EffectiveSettings(row),
     ThrTry = try Eff[Threshold],

@@ -1,12 +1,13 @@
 ﻿// test_Canon: перевірка правила регістру. Очікування: у всіх рядках Pass = TRUE.
 // Використовує реальні tblTargetType і tblPeriodRules: перший рядок кожного довідника.
 let
-    TT  = Excel.CurrentWorkbook(){[Name = "tblTargetType"]}[Content],
-    PR  = Excel.CurrentWorkbook(){[Name = "tblPeriodRules"]}[Content],
+    N   = cfgSettings[Tables],
+    TT  = Excel.CurrentWorkbook(){[Name = N[TargetTypes]]}[Content],
+    PR  = Excel.CurrentWorkbook(){[Name = N[PeriodRules]]}[Content],
     T1  = Text.Trim(Text.From(TT{0}[TargetType])),
     P1  = Text.Trim(Text.From(PR{0}[PeriodType])),
-    CT  = fn_Canon("tblTargetType", "TargetType"),
-    CP  = fn_Canon("tblPeriodRules", "PeriodType"),
+    CT  = fn_Canon(N[TargetTypes], "TargetType"),
+    CP  = fn_Canon(N[PeriodRules], "PeriodType"),
 
     Cases = {
         {"TargetType у верхньому регістрі",  CT(Text.Upper(T1)),          T1},

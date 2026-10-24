@@ -10,8 +10,18 @@ let
     // обов'язкові колонки перевіряємо лише для реальних даних
     Missing = if raw = null then {}
               else List.Difference(rules[RequiredSource], Table.ColumnNames(raw)),
+    // підказка: у файлі є така сама назва з пробілами на краях (заголовки не обрізаються навмисно)
+    Spaced  = if raw = null then {}
+              else List.Select(Table.ColumnNames(raw), (c) => c <> Text.Trim(c) and List.Contains(Missing, Text.Trim(c))),
+    SpacedHint = if List.IsEmpty(Spaced) then ""
+                 else " У файлі є назви з пробілами на краях: '" & Text.Combine(Spaced, "', '") & "'.",
 
-    Data    = fn_ApplyRules(raw, rules, Eff[Culture]),
+    Data0   = fn_ApplyRules(raw, rules, Eff[Culture]),
+    // Strict і поріг потребують перегляду даних до їх видачі: тоді один буфер замість 2-3 розборів
+    // файла (рядки з помилками, кількість рядків, самі дані; аудит коду, розділ 2, v4.10).
+    // Буфер зберігає клітинки-помилки (діагностика BufferOk); Report без порогу буфера не потребує.
+    NeedScan = Policy = "Strict" or (try Eff[Threshold] <> null otherwise true),
+    Data    = if raw <> null and NeedScan then (try Table.Buffer(Data0) otherwise Data0) else Data0,
 
     // обчислюються лише тоді, коли їх запитує fn_LoadVerdict або повідомлення про помилку
     ErrRows = Table.SelectRowsWithErrors(Data),
@@ -19,7 +29,7 @@ let
     ErrCols = List.Select(Table.ColumnNames(Data),
                 (c) => not Table.IsEmpty(Table.SelectRowsWithErrors(ErrBuf, {c}))),
     nAll    = Table.RowCount(Data),
-    nErr    = Table.RowCount(ErrRows),
+    nErr    = Table.RowCount(ErrBuf),
     Rate    = if nAll = 0 then 0 else nErr / nAll,
 
     V   = fn_LoadVerdict(Policy, Missing,
@@ -35,7 +45,7 @@ in
     else if V[Reason] = "ВідсутніОбов'язковіПоля" then
         error Error.Record(V[Reason],
             "У джерелі для '" & rules[TargetType] & "' відсутні обов'язкові колонки: "
-                & Text.Combine(Missing, ", "), Missing)
+                & Text.Combine(Missing, ", ") & "." & SpacedHint, Missing)
     else if V[Reason] = "НевідомаПолітика" then
         error Error.Record(V[Reason],
             "ErrorPolicy має бути Strict, Report або Lenient, а не '" & Policy & "'.", Policy)

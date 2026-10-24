@@ -22,7 +22,8 @@
         List.Select(Names(t), (n) => not List.Contains(
             List.Transform(Record.FieldNames(cfgTransforms), Text.Lower), Text.Lower(n))),
 
-    c1 = Mk(Cnt(W, {"TargetType", "SourceColumnName"}), "ERROR", "Дубль SourceColumnName",
+    // дублі серед Use = Так, як і в fn_GetSchemaRules (рядки з Use = Ні рушій не бачить; v4.10)
+    c1 = Mk(Cnt(Used, {"TargetType", "SourceColumnName"}), "ERROR", "Дубль SourceColumnName",
             (r) => r[SourceColumnName], (r) => "Рядків: " & Text.From(r[N])),
     c2 = Mk(Cnt(Used, {"TargetType", "EffTarget"}), "ERROR", "Дубль цільової назви",
             (r) => r[EffTarget], (r) => "Рядків: " & Text.From(r[N])),

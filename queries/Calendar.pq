@@ -1,5 +1,5 @@
 ﻿let
-    Source = Excel.CurrentWorkbook(){[Name="tblPeriod"]}[Content],
+    Source = Excel.CurrentWorkbook(){[Name = cfgSettings[Tables][Period]]}[Content],
 
     Period = Table.TransformColumnTypes(
         Source,

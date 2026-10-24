@@ -52,6 +52,15 @@ let
     TargetCols = List.Transform(Cols, each _[Target]),
     SourceCols = List.Transform(Cols, each _[Source]),
 
+    // поля Type, Pre, Post обчислюються ліниво: без примусового обчислення невідомий DataType чи
+    // CustomTransform «вибухав» уже під час читання файла (READ_ERROR замість NO_SCHEMA; аудит 1.1, v4.10)
+    Checked = List.Count(List.Select(Cols, (c) =>
+                  c[Type] <> null and (c[Pre] = null or c[Pre] is function)
+                  and (c[Post] = null or c[Post] is function))),
+
+    // цільова назва не може збігатися з колонкою метаданих (fn_ReadPurpose додає їх після Enforcer)
+    MetaClash = List.Intersect({TargetCols, cfgSettings[MetaColumns]}),
+
     Rules = [
         TargetType     = targetType,
         Columns        = Cols,
@@ -80,5 +89,11 @@ in
          or List.Count(List.Distinct(SourceCols)) <> List.Count(SourceCols) then
         error Error.Record("ДублікатиВСхемі",
             "У схемі '" & targetType & "' є дублі назв. Див. pq_SchemaCheck.", targetType)
+    else if not List.IsEmpty(MetaClash) then
+        error Error.Record("ЗбігЗМетаколонкою",
+            "У схемі '" & targetType & "' цільові назви збігаються з колонками метаданих: "
+                & Text.Combine(MetaClash, ", ") & ". Див. pq_SchemaCheck.", MetaClash)
+    else if Checked <> List.Count(Cols) then
+        error Error.Record("НекоректніПравила", "Правила схеми '" & targetType & "' не скомпільовано.", targetType)
     else
         Rules

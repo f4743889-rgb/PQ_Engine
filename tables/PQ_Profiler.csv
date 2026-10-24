@@ -1,0 +1,54 @@
+﻿Run;Date/Time;Query;Connection;Duration (sec);Status;Error;Duration (min);Notes
+9;2026-10-24 03:48:09;pq_QualitySummary;Запит – pq_QualitySummary;41,628;OK;;0,694;
+9;2026-10-24 03:48:09;test_All;Підключення;23,379;OK;;0,390;
+9;2026-10-24 03:48:09;test_Load;Підключення2;14,708;OK;;0,245;
+9;2026-10-24 03:48:09;test_HeadersConsistency;Запит – test_HeadersConsistency;11,057;OK;;0,184;
+9;2026-10-24 03:48:09;test_Summary;Підключення1;10,842;OK;;0,181;
+9;2026-10-24 03:48:09;test_RowFiltersReal;Запит – test_RowFiltersReal;10,831;OK;;0,181;
+9;2026-10-24 03:48:09;test_RegistryIssues;Запит – test_RegistryIssues;9,443;OK;;0,157;
+9;2026-10-24 03:48:09;test_LoadVerdict;Запит – test_LoadVerdict;7,479;OK;;0,125;
+9;2026-10-24 03:48:09;test_AuditFixes;Запит – test_AuditFixes;3,588;OK;;0,060;
+9;2026-10-24 03:48:09;pq_ExtractedColumns;Запит – pq_ExtractedColumns;3,569;OK;;0,059;
+9;2026-10-24 03:48:09;test_Extensions;Запит – test_Extensions;2,757;OK;;0,046;
+9;2026-10-24 03:48:09;Calendar;Запит – Calendar;1,490;OK;;0,025;
+9;2026-10-24 03:48:09;test_NullCounts;Запит – test_NullCounts;1,393;OK;;0,023;
+9;2026-10-24 03:48:09;test_RowFilters;Запит – test_RowFilters;1,257;OK;;0,021;
+9;2026-10-24 03:48:09;test_ToRate;Запит – test_ToRate;1,251;OK;;0,021;
+9;2026-10-24 03:48:09;test_Canon;Запит – test_Canon;0,689;OK;;0,011;
+9;2026-10-24 03:48:09;q_Registry;Запит – q_Registry;0,241;OK;;0,004;лише підключення
+9;2026-10-24 03:48:09;cfgTypeMap;Запит – cfgTypeMap;0,169;OK;;0,003;лише підключення
+9;2026-10-24 03:48:09;pq_SchemaIssues;Запит – pq_SchemaIssues;0,164;OK;;0,003;лише підключення
+9;2026-10-24 03:48:09;targetReportCell;Запит – targetReportCell;0,159;OK;;0,003;лише підключення
+9;2026-10-24 03:48:09;pq_SchemaCheck;Запит – pq_SchemaCheck;0,153;OK;;0,003;лише підключення
+9;2026-10-24 03:48:09;pq_SchemaDrift;Запит – pq_SchemaDrift;0,151;OK;;0,003;лише підключення
+9;2026-10-24 03:48:09;pq_RegistryCheck;Запит – pq_RegistryCheck;0,139;OK;;0,002;лише підключення
+9;2026-10-24 03:48:09;qc_Reports;Запит – qc_Reports;0,113;OK;;0,002;лише підключення
+9;2026-10-24 03:48:09;pq_GenerateSchemaTemplate;Запит – pq_GenerateSchemaTemplate;0,104;OK;;0,002;лише підключення
+9;2026-10-24 03:48:09;src_SchemaRegistry;Запит – src_SchemaRegistry;0,101;OK;;0,002;лише підключення
+9;2026-10-24 03:48:09;cfgTransforms;Запит – cfgTransforms;0,095;OK;;0,002;лише підключення
+9;2026-10-24 03:48:09;pq_QualityErrors;Запит – pq_QualityErrors;0,086;OK;;0,001;лише підключення
+9;2026-10-24 03:48:09;pq_QualityColumns;Запит – pq_QualityColumns;0,074;OK;;0,001;лише підключення
+9;2026-10-24 03:48:09;cfgSettings;Запит – cfgSettings;0,070;OK;;0,001;лише підключення
+9;2026-10-24 03:48:09;fn_GetSchemaRules;Запит – fn_GetSchemaRules;0,029;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_Opt;Запит – fn_Opt;0,018;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_ActiveSources;Запит – fn_ActiveSources;0,017;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_SourcePath;Запит – fn_SourcePath;0,017;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_RowReport;Запит – fn_RowReport;0,017;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_TypeKey;Запит – fn_TypeKey;0,017;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_ReadSource;Запит – fn_ReadSource(1);0,015;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_ReadPurpose;Запит – fn_ReadPurpose;0,015;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_ApplyRules;Запит – fn_ApplyRules;0,015;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_ToBool;Запит – fn_ToBool;0,015;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_SummaryTable;Запит – fn_SummaryTable;0,014;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_ColumnNullCounts;Запит – fn_ColumnNullCounts;0,014;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_ParseSource;Запит – fn_ParseSource;0,014;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_NormalizeSchema;Запит – fn_NormalizeSchema;0,014;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_SchemaReport;Запит – fn_SchemaReport;0,014;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_ApplyRowFilters;Запит – fn_ApplyRowFilters;0,014;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_Options;Запит – fn_Options;0,014;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_ParseHeaders;Запит – fn_ParseHeaders;0,014;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_TemplateColumns;Запит – fn_TemplateColumns;0,014;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_QcReports;Запит – fn_QcReports;0,013;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_ResolveSource;Запит – fn_ResolveSource;0,013;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fxReadNamedCell;Запит – fxReadNamedCell;0,013;OK;;0,000;лише підключення
+9;2026-10-24 03:48:09;fn_EnforceSchema;Запит – fn_EnforceSchema;0,012;OK;;0,000;лише підключення

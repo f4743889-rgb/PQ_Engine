@@ -259,6 +259,7 @@
       - "cfgTransforms"
       - "fn_TypeKey"
       - "cfgTypeMap"
+      - "cfgSettings"
 
   - name: "fn_ApplyRowFilters"
     file: "../queries/fn_ApplyRowFilters.pq"
@@ -467,6 +468,8 @@
       - "test_RegistryIssues"
       - "test_Extensions"
       - "test_NullCounts"
+      - "test_AuditFixes"
+      - "test_HeadersConsistency"
       - "test_RowFilters"
 
   - name: "test_Summary"
@@ -492,7 +495,7 @@
     file: "../queries/test_ToRate.pq"
     group: "99 Тести"
     type: "Transform"
-    loads_to_table: ""
+    loads_to_table: "test_ToRate"
     depends_on:
       - "fn_ToRate"
 
@@ -500,15 +503,16 @@
     file: "../queries/test_Canon.pq"
     group: "99 Тести"
     type: "Parameter"
-    loads_to_table: ""
+    loads_to_table: "test_Canon"
     depends_on:
+      - "cfgSettings"
       - "fn_Canon"
 
   - name: "test_LoadVerdict"
     file: "../queries/test_LoadVerdict.pq"
     group: "99 Тести"
     type: "Transform"
-    loads_to_table: ""
+    loads_to_table: "test_LoadVerdict"
     depends_on:
       - "fn_LoadVerdict"
 
@@ -516,7 +520,7 @@
     file: "../queries/test_RegistryIssues.pq"
     group: "99 Тести"
     type: "Transform"
-    loads_to_table: ""
+    loads_to_table: "test_RegistryIssues"
     depends_on:
       - "fn_RegistryIssues"
 
@@ -524,7 +528,7 @@
     file: "../queries/test_Extensions.pq"
     group: "99 Тести"
     type: "Transform"
-    loads_to_table: ""
+    loads_to_table: "test_Extensions"
     depends_on:
       - "cfgSettings"
       - "fn_ParseSource"
@@ -534,7 +538,7 @@
     file: "../queries/test_RowFilters.pq"
     group: "99 Тести"
     type: "Transform"
-    loads_to_table: ""
+    loads_to_table: "test_RowFilters"
     depends_on:
       - "fn_ApplyRowFilters"
 
@@ -542,13 +546,49 @@
     file: "../queries/test_RowFiltersReal.pq"
     group: "99 Тести"
     type: "Parameter"
-    loads_to_table: ""
+    loads_to_table: "test_RowFiltersReal"
     depends_on:
       - "cfgSettings"
       - "fn_ActiveSources"
       - "fn_Opt"
       - "fn_ReadSource"
       - "fn_ApplyRowFilters"
+
+  - name: "test_NullCounts"
+    file: "../queries/test_NullCounts.pq"
+    group: "99 Тести"
+    type: "Transform"
+    loads_to_table: "test_NullCounts"
+    depends_on:
+      - "fn_ColumnNullCounts"
+
+  - name: "test_AuditFixes"
+    file: "../queries/test_AuditFixes.pq"
+    group: "99 Тести"
+    type: "Transform"
+    loads_to_table: "test_AuditFixes"
+    depends_on:
+      - "cfgSettings"
+      - "fn_GetSchemaRules"
+      - "fn_RegistryIssues"
+      - "fn_SchemaReport"
+      - "fn_ApplyRulesEx"
+      - "fn_ApplyRowFilters"
+      - "fn_EffectiveSettings"
+      - "fn_EnforceSchema"
+
+  - name: "test_HeadersConsistency"
+    file: "../queries/test_HeadersConsistency.pq"
+    group: "99 Тести"
+    type: "Parameter"
+    loads_to_table: "test_HeadersConsistency"
+    depends_on:
+      - "fn_ActiveSources"
+      - "fn_LoadConfig"
+      - "fn_ResolveSource"
+      - "fn_Options"
+      - "fn_ParseHeaders"
+      - "fn_ParseSource"
 
   - name: "pq_RowFiltersCheck"
     file: "../queries/pq_RowFiltersCheck.pq"
@@ -558,47 +598,10 @@
     depends_on:
       - "fn_LoadConfig"
 
-  - name: "zz_diag_ReportCost"
-    file: "../queries/zz_diag_ReportCost.pq"
-    group: ""
-    type: "Transform"
-    loads_to_table: ""
-    depends_on:
-      - "fn_LoadConfig"
-      - "fn_ActiveSources"
-      - "fn_GetSchemaRules"
-      - "fn_EffectiveSettings"
-      - "fn_ReadSource"
-      - "fn_ApplyRulesEx"
-      - "fn_SchemaReport"
-      - "fn_RowReport"
-
-  - name: "zz_diag_SourceCost"
-    file: "../queries/zz_diag_SourceCost.pq"
-    group: ""
-    type: "Transform"
-    loads_to_table: ""
-    depends_on:
-      - "fn_LoadConfig"
-      - "fn_ActiveSources"
-      - "fn_QcReports"
-      - "fn_ReadSource"
-      - "fn_GetSchemaRules"
-      - "fn_ApplyRulesEx"
-      - "fn_EffectiveSettings"
-
   - name: "fn_ColumnNullCounts"
     file: "../queries/fn_ColumnNullCounts.pq"
     group: "06 Якість даних"
     type: "Function"
     loads_to_table: ""
     depends_on: []
-
-  - name: "test_NullCounts"
-    file: "../queries/test_NullCounts.pq"
-    group: "99 Тести"
-    type: "Transform"
-    loads_to_table: ""
-    depends_on:
-      - "fn_ColumnNullCounts"
 

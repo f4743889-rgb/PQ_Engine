@@ -29,10 +29,16 @@ let
     // 1. канонічна форма: усі колонки схеми, у порядку схеми; відсутні необов'язкові = null
     Shaped = Table.SelectColumns(Base, rules[SourceCols], MissingField.UseNull),
 
-    // 2. прибрати повністю порожні рядки (порожній текст теж порожній)
+    // 2. прибрати повністю порожні рядки (порожній текст теж порожній).
+    //    Клітинка-помилка (#N/A з xlsx) вважається непорожньою: інакше помилка в предикаті
+    //    ламала весь запит (аудит 1.2, v4.10)
+    //    Значення читається всередині try: якщо передати клітинку-помилку у функцію аргументом,
+    //    помилка виникає ще до try (test_AuditFixes 1.2, 24.10.2026)
+    ShapedCols = Table.ColumnNames(Shaped),
     NonEmpty = Table.SelectRows(Shaped,
-                   each List.MatchesAny(Record.FieldValues(_),
-                       (v) => v <> null and (not (v is text) or Text.Trim(v) <> ""))),
+                   (row) => List.MatchesAny(ShapedCols, (n) =>
+                       let v = try Record.Field(row, n)
+                       in  v[HasError] or (v[Value] <> null and (not (v[Value] is text) or Text.Trim(v[Value]) <> "")))),
 
     // 3. до-типові дії (імена джерела), 4. перейменування, 5. типи, 6. після-типові дії
     Pre     = if List.IsEmpty(rules[PreSteps])    then NonEmpty

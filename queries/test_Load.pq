@@ -19,17 +19,17 @@ let
             tt   = Norm(c[TargetType]),
             Load = () => fn_ReadPurpose(Cfg & [Registry = sub], tt),
 
-            // RowCount примушує виконати всі перевірки fn_ReadPurpose і fn_EnforceSchema,
-            // але не читає значення клітинок, тож помилки в клітинках (Report) не заважають
-            Cnt     = try Table.RowCount(Load()),
+            // одне завантаження на сценарій (v4.10; раніше Load() виконувався двічі): буфер зберігає
+            // клітинки-помилки (Report), а помилки рівня таблиці (Strict, поріг, реєстр) ловить try
+            Cnt     = try Table.Buffer(Load()),
             Outcome = if Cnt[HasError] then "ERROR" else "OK",
             Reason  = if Cnt[HasError] then Norm(Cnt[Error][Reason]) else "",
-            Rows    = if Cnt[HasError] then null else Cnt[Value],
+            Rows    = if Cnt[HasError] then null else Table.RowCount(Cnt[Value]),
             // клітинки з помилками рахуються за один перегляд таблиці (раніше - окремий
             // перегляд, тобто повне завантаження, на кожну колонку) (патч F2)
             ErrCells =
                 if Cnt[HasError] then null
-                else let T    = Load(),
+                else let T    = Cnt[Value],
                          Cols = Table.ColumnNames(T),
                          PerRow = Table.AddColumn(T, "__ErrCells",
                              (r) => List.Count(List.Select(Cols, (c) => (try Record.Field(r, c))[HasError])),

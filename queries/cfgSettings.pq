@@ -15,7 +15,8 @@
 
     // Таблиці книги (fn_LoadConfig, fn_Canon, fn_RegistryIssues, fn_TemplateColumns)
     Tables = [Registry = "tblSourceRegistry", Schema = "tblSchemaRegistry", RowFilters = "tblRowFilters",
-              DefaultHeaders = "tblDefaultHeaders", TargetTypes = "tblTargetType", PeriodRules = "tblPeriodRules"],
+              DefaultHeaders = "tblDefaultHeaders", TargetTypes = "tblTargetType", PeriodRules = "tblPeriodRules",
+              Period = "tblPeriod"],
 
     // Розширення файлів-джерел (малими літерами, без крапки): fn_ParseSource, fn_ParseHeaders,
     // макрос вибору файлів (фільтр діалогу і перевірка CSV)

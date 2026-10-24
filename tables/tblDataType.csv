@@ -1,4 +1,15 @@
-﻿DataType
-text
-number
-date
+﻿DataType;Опис
+text;текст
+number;число
+int64;ціле число
+currency;грошовий
+date;дата
+logical;логічний
+any;будь який
+string;текст
+decimal;число
+integer;ціле число
+percentage;відсотки
+datetime;дата і час
+boolean;логічний
+time;час

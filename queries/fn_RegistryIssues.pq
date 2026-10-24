@@ -44,7 +44,10 @@ let
 
     DupId     = Dups(Id,   false, "Дубль SourceID", "ДублюванняSourceID", true, 1),
     DupFile   = Dups(FKey, true,  "Дубль файлу (шлях + лист) у призначенні", "ДублюванняФайлу", not AllowFiles, 2),
-    DupPeriod = Dups(PKey, true,  "Дубль TargetType + період", "ДублюванняПеріоду", not AllowPeriods, 3),
+    // джерела без періоду (PeriodType і PeriodNumber порожні) у перевірці періоду не беруть участі:
+    // той самий файл двічі ловить DupFile (аудит 1.5, v4.10)
+    PKeySet   = (r as record) as nullable text => let k = PKey(r) in if k = "|" then null else k,
+    DupPeriod = Dups(PKeySet, true, "Дубль TargetType + період", "ДублюванняПеріоду", not AllowPeriods, 3),
 
     Blank   = List.Select(Recs, (r) => Text.Trim(Id(r)) = ""),
     BlankId = if List.IsEmpty(Blank) then {}

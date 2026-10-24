@@ -29,6 +29,11 @@ let
                     each Text.Lower(([ETarget] ?? "") & "|" & ([EName] ?? "")))),
     FoundKeys = List.Buffer(List.Transform(Table.ToRecords(Found),
                     each Text.Lower(([TargetType] ?? "") & "|" & ([SourceColumnName] ?? "")))),
+    // для підказки «пробіли на краях»: назви збігаються лише після Text.Trim (v4.10; заголовки
+    // файлів навмисно не обрізаються, щоб зміну у вивантаженні було видно)
+    KeyT      = (t as nullable text, n as nullable text) as text => Text.Lower((t ?? "") & "|" & Text.Trim(n ?? "")),
+    ExpKeysT  = List.Buffer(List.Transform(Table.ToRecords(Exp), each KeyT([ETarget], [EName]))),
+    FoundKeysT = List.Buffer(List.Transform(Table.ToRecords(Found), each KeyT([TargetType], [SourceColumnName]))),
 
     Status = Table.AddColumn(X, "DriftStatus", each
         let
@@ -40,11 +45,16 @@ let
             if InSchema and not Used then "Ігнорується (Use = Ні)"
             else if InFile and not InSchema then
                  (if List.Contains(ExpKeys, Text.Lower(([TargetType] ?? "") & "|" & [SourceColumnName]))
-                  then "Немає у схемі: регістр відрізняється" else "Немає у схемі")
+                  then "Немає у схемі: регістр відрізняється"
+                  else if List.Contains(ExpKeysT, KeyT([TargetType], [SourceColumnName]))
+                  then "Немає у схемі: пробіли на краях назви" else "Немає у схемі")
             else if InSchema and not InFile then
                  (if List.Contains(FoundKeys, Text.Lower(([ETarget] ?? "") & "|" & [EName]))
                   then (if Req then "ВІДСУТНЯ обов'язкова: регістр відрізняється"
                         else "Відсутня необов'язкова: регістр відрізняється")
+                  else if List.Contains(FoundKeysT, KeyT([ETarget], [EName]))
+                  then (if Req then "ВІДСУТНЯ обов'язкова: у файлі назва з пробілами на краях"
+                        else "Відсутня необов'язкова: у файлі назва з пробілами на краях")
                   else if Req then "ВІДСУТНЯ обов'язкова" else "Відсутня необов'язкова")
             else if [FilesWithColumn] < [FilesTotal]
                  then (if Req then "ЧАСТКОВО (обов'язкова)" else "Частково")

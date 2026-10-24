@@ -41,8 +41,9 @@ let
 
     // нормалізація тексту для порівняння: обрізання пробілів, нижній регістр
     Key  = (t as nullable text) as text => Text.Lower(Text.Trim(t ?? "")),
-    // значення клітинки як нормалізований текст; помилкова клітинка та null дають ""
-    Norm = (x as any) as text => try Text.Lower(Text.Trim(Text.From(x ?? ""))) otherwise "",
+    // значення клітинки як нормалізований текст у культурі Cult (не культурі машини; аудит 1.3, v4.10);
+    // помилкова клітинка та null дають ""
+    Norm = (x as any) as text => try Text.Lower(Text.Trim(Text.From(x ?? "", Cult))) otherwise "",
 
     Cols = Table.ColumnNames(tbl),
 
@@ -59,22 +60,25 @@ let
             vals = List.Select(
                        List.Transform(Text.Split(Text.From(r[Value] ?? ""), "|"), Key),
                        each _ <> ""),
+            // test отримує значення клітинки (помилка = null); текстові оператори працюють з Norm(x)
             test =
                 if op = "equals" then
-                    ((s as text) => List.Contains(vals, s))
+                    ((x as any) => List.Contains(vals, Norm(x)))
                 else if op = "startswith" then
-                    ((s as text) => List.AnyTrue(List.Transform(vals, (v) => Text.StartsWith(s, v))))
+                    ((x as any) => let s = Norm(x) in List.AnyTrue(List.Transform(vals, (v) => Text.StartsWith(s, v))))
                 else if op = "contains" then
-                    ((s as text) => List.AnyTrue(List.Transform(vals, (v) => Text.Contains(s, v))))
+                    ((x as any) => let s = Norm(x) in List.AnyTrue(List.Transform(vals, (v) => Text.Contains(s, v))))
                 else if op = "isblank" then
-                    ((s as text) => s = "")
+                    ((x as any) => Norm(x) = "")
                 else if op = "notnumeric" then
-                    ((s as text) => s <> "" and (try Number.FromText(s, Cult) otherwise null) = null)
+                    // справжнє число (xlsx) завжди числове, незалежно від культури
+                    ((x as any) => if x is number then false
+                                   else let s = Norm(x) in s <> "" and (try Number.FromText(s, Cult) otherwise null) = null)
                 else
                     error Error.Record("НевідомийОператорФільтра",
                                        "Оператор '" & op & "' не підтримується.", col)
         in
-            (row as record) as logical => test(Norm(Record.Field(row, col))),
+            (row as record) as logical => test(try Record.Field(row, col) otherwise null),
 
     Valid    = Table.SelectRows(Mine, each List.Contains(Cols, Text.Trim(Text.From([SourceColumnName] ?? "")))),
     Fns      = List.Transform(Table.ToRecords(Valid), Compile),
