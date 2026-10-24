@@ -13,7 +13,11 @@ Option Explicit
 '                                    фільтри, довідники); таблиці-результати запитів не
 '                                    експортуються, бо відтворюються оновленням; журнал
 '                                    tblRunLog теж ні (EXCLUDED_TABLES)
-' Перед експортом старі .pq і .csv видаляються, тож Git бачить і видалені запити чи таблиці.
+'   powerquery\vba\<модуль>.bas|.cls|.frm  модулі VBA (VBComponent.Export, ANSI = cp1251;
+'                                    .gitattributes зберігає їх у Git в UTF-8)
+' Перед експортом старі .pq, .csv і модулі VBA видаляються, тож Git бачить і видалені запити,
+' таблиці чи модулі. Модулі VBA потребують «Довіряти доступ до об'єктної моделі проєкту VBA»
+' (Центр безпеки -> Параметри макросів); без доступу тека vba не чіпається.
 ' Клітинки з формулами експортуються формулою (наприклад, Path = =TestDir).
 '
 ' Відмінності від попередньої версії: залежності шукаються за точними ідентифікаторами M
@@ -69,16 +73,78 @@ Public Sub ExportPowerQueriesToRepo()
         Next lo
     Next ws
 
+    Dim vbaNote As String, nV As Long
+    vbaNote = ExportVbaModules(root & "\powerquery\vba", nV)
+
     MsgBox "Експортовано:" & vbCrLf & _
            "запитів Power Query: " & nQ & vbCrLf & _
            "таблиць конфігурації: " & nT & vbCrLf & _
+           "модулів VBA: " & nV & vbCrLf & _
+           IIf(vbaNote <> "", vbCrLf & vbaNote & vbCrLf, "") & _
            IIf(groupsNote <> "", vbCrLf & groupsNote & vbCrLf, "") & _
            IIf(mUnmappedN > 0, vbCrLf & "Без теки в " & GROUPS_QUERY & " (" & mUnmappedN & "):" & mUnmapped & vbCrLf, "") & _
-           vbCrLf & root & "\powerquery", IIf(mUnmappedN > 0 Or groupsNote <> "", vbExclamation, vbInformation), "Export complete"
+           vbCrLf & root & "\powerquery", _
+           IIf(mUnmappedN > 0 Or groupsNote <> "" Or vbaNote <> "", vbExclamation, vbInformation), "Export complete"
     Exit Sub
 Fail:
     MsgBox "Помилка експорту: " & Err.Description, vbCritical, "Export"
 End Sub
+
+' ================== VBA ==================
+' Модулі проєкту -> vbaDir\<ім'я>.bas (стандартні), .cls (класи), .frm/.frx (форми); модулі
+' аркушів і книги - як .cls, лише якщо в них є код (крім рядків Option).
+' Тека очищується лише після перевірки доступу: інакше Git побачив би всі модулі видаленими.
+' Повертає "" або текст попередження; n - кількість експортованих модулів.
+Private Function ExportVbaModules(vbaDir As String, ByRef n As Long) As String
+    Dim proj As Object, comp As Object, ext As String, cnt As Long
+
+    n = 0
+    On Error Resume Next
+    Set proj = ThisWorkbook.VBProject
+    cnt = proj.VBComponents.Count
+    If Err.Number <> 0 Or proj Is Nothing Then
+        On Error GoTo 0
+        ExportVbaModules = "Модулі VBA не експортовано (тека vba не змінена): увімкніть «Довіряти доступ " & _
+                           "до об'єктної моделі проєкту VBA» у Центрі безпеки."
+        Exit Function
+    End If
+    If proj.Protection = 1 Then                       ' vbext_pp_locked
+        On Error GoTo 0
+        ExportVbaModules = "Модулі VBA не експортовано (тека vba не змінена): проєкт VBA захищено паролем."
+        Exit Function
+    End If
+    On Error GoTo 0
+
+    engEnsureFolder vbaDir
+    ClearFolder vbaDir, "bas"
+    ClearFolder vbaDir, "cls"
+    ClearFolder vbaDir, "frm"
+    ClearFolder vbaDir, "frx"
+
+    For Each comp In proj.VBComponents
+        Select Case comp.Type
+            Case 1: ext = "bas"                       ' vbext_ct_StdModule
+            Case 2: ext = "cls"                       ' vbext_ct_ClassModule
+            Case 3: ext = "frm"                       ' vbext_ct_MSForm (.frx Export створює сам)
+            Case 100: If HasCode(comp) Then ext = "cls" Else ext = ""    ' vbext_ct_Document
+            Case Else: ext = ""
+        End Select
+        If ext <> "" Then
+            comp.Export vbaDir & "\" & engSafeFileName(comp.Name) & "." & ext
+            n = n + 1
+        End If
+    Next comp
+End Function
+
+' Чи є в модулі код, крім порожніх рядків і Option ...
+Private Function HasCode(comp As Object) As Boolean
+    Dim cm As Object, i As Long, s As String
+    Set cm = comp.CodeModule
+    For i = 1 To cm.CountOfLines
+        s = Trim$(cm.Lines(i, 1))
+        If s <> "" And StrComp(Left$(s, 7), "Option ", vbTextCompare) <> 0 Then HasCode = True: Exit Function
+    Next i
+End Function
 
 ' ================== queries.yml ==================
 Private Function BuildQueriesYaml() As String
