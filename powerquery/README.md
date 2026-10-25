@@ -46,7 +46,7 @@
 
 ### Оновлення
 
-1. Звіти якості (pq_QualitySummary, pq_QualityColumns, pq_QualityErrors) і Calendar вимкнено з «Оновити все» (властивість підключення «Оновлювати під час оновлення всіх»). Звіти оновлює RefreshWithRunLog або правою кнопкою на таблиці → Оновити; Calendar - вручну після зміни tblPeriod.
+1. Звіти якості і Calendar вимкнено з «Оновити все» (властивість підключення «Оновлювати під час оновлення всіх»). Зведення pq_QualitySummary оновлюють RefreshWithRunLog і SelectSourceFiles; pq_QualityColumns і pq_QualityErrors (якщо на аркуші) - вручну: правою кнопкою на таблиці → Оновити; Calendar - вручну після зміни tblPeriod. RefreshWithRunLog пропонує зняти позначку, якщо вона лишилася.
 
 ### Git
 
@@ -61,7 +61,6 @@
 | Таблиця | Аркуш | Тип | Запит | Призначення | Довідка |
 | --- | --- | --- | --- | --- | --- |
 | pq_ExtractedColumns | pq_ExtractedColumns | Результат запиту | pq_ExtractedColumns | Результат запиту pq_ExtractedColumns. |  |
-| pq_QualitySummary | pq_QualitySummary | Результат запиту | pq_QualitySummary | Зведення якості по джерелах (Status, QualityFlag, кількість рядків і помилок). |  |
 | tblSourceRegistry | CONFIG | Ручна |  | Реєстр джерел: один рядок = один файл (SourceID, призначення, шлях, період, політика помилок). | [hlpSourceRegistry](#hlpsourceregistry) |
 | tblSchemaRegistry | SCHEMA | Ручна |  | Схема даних: колонки кожного призначення, цільові назви, типи, обов'язковість, перетворення. | [hlpSchemaRegistry](#hlpschemaregistry) |
 | tblDefaultHeaders | TEMPLATES | Ручна |  | Шаблон заголовків призначення на випадок, коли шлях до файла не задано. |  |
@@ -82,6 +81,7 @@
 | hlpSchemaRegistry | HELP | Ручна |  | Довідник з детальним описом та призначенням колонок tblSchemaRegistry |  |
 | tblCustomTransform | HELP | Ручна |  | Довідник дій CustomTransform схеми (Data Validation). |  |
 | hlpProject | HELP | Ручна |  | Загальна довідка проєкту: правила структури книги, каталогу і довідки. |  |
+| pq_QualitySummary | pq_QualitySummary | Результат запиту | pq_QualitySummary | Зведення якості по джерелах (Status, QualityFlag, кількість рядків і помилок). |  |
 | tblRunLog | RunLog | Ручна |  | Журнал запусків RefreshWithRunLog: час, статус і якість кожного джерела. |  |
 
 ## Довідки до таблиць
@@ -237,7 +237,7 @@
 | Модуль | Макроси (Alt+F8) | Опис |
 | --- | --- | --- |
 | [modCleanExportSelectedSheets](<vba/modCleanExportSelectedSheets.bas>) | CleanExportSelectedSheets | експорт виділених аркушів в окремі книги без запитів і зв'язків (v4.11) |
-| [modEngineCommon](<vba/modEngineCommon.bas>) |  | спільні процедури макросів Power Query Engine (аудит D13; v4.11) |
+| [modEngineCommon](<vba/modEngineCommon.bas>) |  | спільні процедури макросів Power Query Engine (аудит D13; v4.13) |
 | [modExportPowerQueryCodesToRepo](<vba/modExportPowerQueryCodesToRepo.bas>) | ExportPowerQueriesToRepo | експорт коду Power Query, таблиць, модулів VBA і README для Git (v4.11) |
 | [modImportPowerQueryFromFolder](<vba/modImportPowerQueryFromFolder.bas>) | ImportPQQueriesFromFolder | імпорт або оновлення запитів Power Query з файлів .pq (v4.11) |
 | [modPOWERQUERYPROFILER](<vba/modPOWERQUERYPROFILER.bas>) | ProfilePowerQueries | час оновлення кожного підключення Power Query (етап D; v4.12) |
