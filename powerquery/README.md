@@ -44,6 +44,10 @@
 
 1. Без підпису за замовчуванням: tblTableCatalog, hlpProject, tblRunLog, test_… і tblTest….
 
+### Оновлення
+
+1. Звіти якості (pq_QualitySummary, pq_QualityColumns, pq_QualityErrors) і Calendar вимкнено з «Оновити все» (властивість підключення «Оновлювати під час оновлення всіх»). Звіти оновлює RefreshWithRunLog або правою кнопкою на таблиці → Оновити; Calendar - вручну після зміни tblPeriod.
+
 ### Git
 
 1. Репозиторій дзеркалить робочу книгу: ExportPowerQueriesToRepo запускають лише в ній (у тестовій книзі він зупиняється). Тестова конфігурація - tests\test_config.xlsx, тестові запити - tests\queries, фікстури - tests\fixtures.
@@ -78,6 +82,7 @@
 | hlpSchemaRegistry | HELP | Ручна |  | Довідник з детальним описом та призначенням колонок tblSchemaRegistry |  |
 | tblCustomTransform | HELP | Ручна |  | Довідник дій CustomTransform схеми (Data Validation). |  |
 | hlpProject | HELP | Ручна |  | Загальна довідка проєкту: правила структури книги, каталогу і довідки. |  |
+| tblRunLog | RunLog | Ручна |  | Журнал запусків RefreshWithRunLog: час, статус і якість кожного джерела. |  |
 
 ## Довідки до таблиць
 
@@ -236,7 +241,7 @@
 | [modExportPowerQueryCodesToRepo](<vba/modExportPowerQueryCodesToRepo.bas>) | ExportPowerQueriesToRepo | експорт коду Power Query, таблиць, модулів VBA і README для Git (v4.11) |
 | [modImportPowerQueryFromFolder](<vba/modImportPowerQueryFromFolder.bas>) | ImportPQQueriesFromFolder | імпорт або оновлення запитів Power Query з файлів .pq (v4.11) |
 | [modPOWERQUERYPROFILER](<vba/modPOWERQUERYPROFILER.bas>) | ProfilePowerQueries | час оновлення кожного підключення Power Query (етап D; v4.12) |
-| [modRunLog](<vba/modRunLog.bas>) | RefreshWithRunLog | оновлення книги з журналом запусків (етап D; v4.11) |
+| [modRunLog](<vba/modRunLog.bas>) | RefreshWithRunLog | оновлення книги з журналом запусків (етап D; v4.13) |
 | [modSelectSourceFiles](<vba/modSelectSourceFiles.bas>) | SelectSourceFiles | вибір файлів-джерел для рядків tblSourceRegistry |
 | [modSetupTestEngine](<vba/modSetupTestEngine.bas>) | SetupTestEngine | перетворення КОПІЇ книги Engine на тестову (етап C; v4.11) |
 | [modTableCatalog](<vba/modTableCatalog.bas>) | UpdateHelp | каталог таблиць книги, підписи над таблицями і довідка (v4.11) |
