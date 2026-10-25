@@ -133,7 +133,6 @@
       - "fn_EffectiveSettings"
       - "fn_ApplyRules"
       - "fn_LoadVerdict"
-      - "cfgSettings"
 
   - name: "fn_GetSchemaRules"
     file: "../queries/fn_GetSchemaRules.pq"
