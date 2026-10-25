@@ -174,6 +174,26 @@ Private Function HasCode(comp As Object) As Boolean
 End Function
 
 ' ================== queries.yml ==================
+' Запити книги за абеткою: порядок ThisWorkbook.Queries змінюється, коли запит видаляють і
+' імпортують знову, і queries.yml та README «змінювалися» б без змін у коді
+Private Function SortedQueries() As Collection
+    Dim q As WorkbookQuery, gk() As String, i As Long, j As Long, tmp As String, res As New Collection
+    If ThisWorkbook.Queries.Count = 0 Then Set SortedQueries = res: Exit Function
+    ReDim gk(0 To ThisWorkbook.Queries.Count - 1)
+    For Each q In ThisWorkbook.Queries
+        gk(i) = q.Name: i = i + 1
+    Next q
+    For i = 0 To UBound(gk) - 1
+        For j = i + 1 To UBound(gk)
+            If StrComp(gk(j), gk(i), vbTextCompare) < 0 Then tmp = gk(i): gk(i) = gk(j): gk(j) = tmp
+        Next j
+    Next i
+    For i = 0 To UBound(gk)
+        res.Add ThisWorkbook.Queries(gk(i))
+    Next i
+    Set SortedQueries = res
+End Function
+
 Private Function BuildQueriesYaml() As String
     Dim qNames As Object, q As WorkbookQuery, ids As Object, dep As Variant
     Dim txt As String, deps As String, loadTo As String, lo As ListObject
@@ -185,7 +205,7 @@ Private Function BuildQueriesYaml() As String
     Next q
 
     txt = "queries:" & vbCrLf
-    For Each q In ThisWorkbook.Queries
+    For Each q In SortedQueries()
         Set ids = engMIdentifiers(q.formula)
         deps = ""
         For Each dep In ids.Keys
@@ -383,7 +403,7 @@ Private Function QueriesSection() As String
     Next q
 
     Set byGroup = CreateObject("Scripting.Dictionary")
-    For Each q In ThisWorkbook.Queries
+    For Each q In SortedQueries()
         g = GroupOf(q.Name, False)
         If g = "" Then g = "Без теки"
         Set ids = engMIdentifiers(q.formula)
@@ -421,6 +441,7 @@ End Function
 Private Function MacrosSection() As String
     Dim proj As Object, comp As Object, cm As Object, i As Long, s As String, t As String
     Dim desc As String, subs As String, nm As String, why As String
+    Dim macroRows As Object, gk() As String, j As Long, tmp As String, mk As Variant
 
     t = "## Макроси VBA" & vbCrLf & vbCrLf
     why = VbaAccessProblem(proj)
@@ -431,6 +452,9 @@ Private Function MacrosSection() As String
 
     t = t & "Код модулів — у теці vba/. Імпорт у книгу: редактор VBA, File > Import File (спершу modEngineCommon)." & _
         vbCrLf & vbCrLf & "| Модуль | Макроси (Alt+F8) | Опис |" & vbCrLf & "| --- | --- | --- |" & vbCrLf
+    ' рядки збираються за назвою модуля і виводяться за абеткою: порядок VBComponents змінюється
+    ' після кожного видалення й імпорту модуля, і README «змінювався» б без змін у коді
+    Set macroRows = CreateObject("Scripting.Dictionary")
     For Each comp In proj.VBComponents
         If comp.Type = 1 Then
             Set cm = comp.CodeModule
@@ -443,10 +467,25 @@ Private Function MacrosSection() As String
                 nm = MacroName(s)
                 If nm <> "" Then subs = subs & IIf(subs = "", "", ", ") & nm
             Next i
-            t = t & "| [" & MdText(comp.Name) & "](<vba/" & engSafeFileName(comp.Name) & ".bas>) | " & _
+            macroRows(comp.Name) = "| [" & MdText(comp.Name) & "](<vba/" & engSafeFileName(comp.Name) & ".bas>) | " & _
                 MdText(subs) & " | " & MdText(desc) & " |" & vbCrLf
         End If
     Next comp
+    If macroRows.Count > 0 Then
+        ReDim gk(0 To macroRows.Count - 1)
+        i = 0
+        For Each mk In macroRows.Keys
+            gk(i) = CStr(mk): i = i + 1
+        Next mk
+        For i = 0 To UBound(gk) - 1
+            For j = i + 1 To UBound(gk)
+                If StrComp(gk(j), gk(i), vbTextCompare) < 0 Then tmp = gk(i): gk(i) = gk(j): gk(j) = tmp
+            Next j
+        Next i
+        For i = 0 To UBound(gk)
+            t = t & macroRows(gk(i))
+        Next i
+    End If
     MacrosSection = t & vbCrLf
 End Function
 
