@@ -1,4 +1,4 @@
-// test_Canon: перевірка правила регістру. Очікування: у всіх рядках Pass = TRUE.
+﻿// test_Canon: перевірка правила регістру. Очікування: у всіх рядках Pass = TRUE.
 // Використовує реальні tblTargetType і tblPeriodRules: перший рядок кожного довідника.
 let
     N   = cfgSettings[Tables],

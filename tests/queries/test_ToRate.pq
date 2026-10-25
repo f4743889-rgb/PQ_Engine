@@ -1,4 +1,4 @@
-// test_ToRate: перевірка розбору порогу. Очікування: у всіх рядках Pass = TRUE.
+﻿// test_ToRate: перевірка розбору порогу. Очікування: у всіх рядках Pass = TRUE.
 let
     Near = (a as nullable number, b as nullable number) as logical =>
         (a = null and b = null) or (a <> null and b <> null and Number.Abs(a - b) < 0.000000001),

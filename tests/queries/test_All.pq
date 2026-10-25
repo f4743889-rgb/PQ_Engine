@@ -1,4 +1,4 @@
-// test_All: підсумок регресійних і модульних тестів Engine. Очікування: у всіх рядках Result = PASS.
+﻿// test_All: підсумок регресійних і модульних тестів Engine. Очікування: у всіх рядках Result = PASS.
 // Збирає результати інших запитів, книгу не читає.
 let
     Suite = (name as text, passes as list) as record =>

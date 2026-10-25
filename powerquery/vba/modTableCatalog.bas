@@ -156,7 +156,7 @@ Private Function EnsureCatalog(ByRef wsCat As Worksheet) As ListObject
         wsCat.Name = CAT_SHEET
     End If
 
-    wsCat.Cells(HEADER_ROW_MIN, 1).Resize(1, COL_COUNT).value = CatalogHeader()
+    wsCat.Cells(HEADER_ROW_MIN, 1).Resize(1, COL_COUNT).Value = CatalogHeader()
     Set lo = wsCat.ListObjects.Add(xlSrcRange, wsCat.Cells(HEADER_ROW_MIN, 1).Resize(2, COL_COUNT), , xlYes)
     lo.Name = CAT_TABLE
     Set EnsureCatalog = lo
@@ -214,9 +214,9 @@ Private Sub EnsureCatalogColumns(cat As ListObject)
     End If
     ' тимчасові назви, щоб нові назви не збіглися зі старими в іншій позиції
     For i = 1 To COL_COUNT
-        cat.HeaderRowRange.Cells(1, i).value = "tmp_col_" & i
+        cat.HeaderRowRange.Cells(1, i).Value = "tmp_col_" & i
     Next i
-    cat.HeaderRowRange.value = hdr
+    cat.HeaderRowRange.Value = hdr
 End Sub
 
 Private Sub RaiseNoRoom(extra As Range)
@@ -235,7 +235,7 @@ Private Sub WriteCatalog(cat As ListObject, wsCat As Worksheet, data() As Varian
     If n = 0 Then Exit Sub
 
     Set body = cat.DataBodyRange
-    body.value = data
+    body.Value = data
 
     ' гіперпосилання: назва таблиці і назва довідки (якщо таблиця знайдена) -> діапазон таблиці
     For i = 1 To n
@@ -265,7 +265,7 @@ Private Sub AddTableLink(wsCat As Worksheet, anchorCell As Range, tblName As Str
     Set lo = engFindTable(tblName)
     If lo Is Nothing Then Exit Sub
     target = "'" & Replace(lo.Parent.Name, "'", "''") & "'!" & lo.Range.Address
-    wsCat.Hyperlinks.Add anchor:=anchorCell, Address:="", SubAddress:=target, TextToDisplay:=tblName
+    wsCat.Hyperlinks.Add Anchor:=anchorCell, Address:="", SubAddress:=target, TextToDisplay:=tblName
 End Sub
 
 Private Function CollectTables(ByRef tbls() As ListObject) As Long
@@ -327,7 +327,7 @@ Private Function SyncProjectHelp(wsCat As Worksheet) As String
     If Not lo Is Nothing Then
         ' порівняння з кодом
         If lo.Range.Rows.Count = n + 1 And lo.Range.Columns.Count = 3 Then
-            cur = lo.Range.value
+            cur = lo.Range.Value
             same = True
             For i = 1 To n + 1
                 If CStr(cur(i, 1)) <> CStr(arr(i, 1)) Or CStr(cur(i, 2)) <> CStr(arr(i, 2)) Or _
@@ -348,7 +348,7 @@ Private Function SyncProjectHelp(wsCat As Worksheet) As String
         If Not lo.DataBodyRange Is Nothing Then lo.DataBodyRange.ClearContents
         lo.Resize top.Resize(n + 1, 3)
         ClearOutside oldRng, lo.Range
-        top.Resize(n + 1, 3).value = arr
+        top.Resize(n + 1, 3).Value = arr
         FormatProjectHelp lo
         SyncProjectHelp = "оновлено"
         Exit Function
@@ -366,7 +366,7 @@ Private Function SyncProjectHelp(wsCat As Worksheet) As String
     col = col + 2
 
     Set top = wsCat.Cells(HEADER_ROW_MIN, col)
-    top.Resize(n + 1, 3).value = arr
+    top.Resize(n + 1, 3).Value = arr
     Set lo = wsCat.ListObjects.Add(xlSrcRange, top.Resize(n + 1, 3), , xlYes)
     lo.Name = PROJECT_HELP
     FormatProjectHelp lo
@@ -404,6 +404,7 @@ Private Function ProjectRules() As Collection
     AddRule c, "Назви", "Назви таблиць унікальні і завжди з префіксом. Таблиця з запиту називається як запит (без tbl_). Довідка до tblX за замовчуванням - hlpX."
     AddRule c, "Довідка", "Аркуш HELP: tblTableCatalog, hlpProject (ця таблиця) і всі hlp-таблиці - поруч, шапки в рядку 3."
     AddRule c, "Довідка", "Призначення таблиці описують лише в tblTableCatalog[Призначення]. Правила заповнення колонок - у hlp-таблиці, вказаній у tblTableCatalog[Довідка]."
+    AddRule c, "Довідка", "Ця таблиця (hlpProject) - копія правил з коду модуля modTableCatalog: UpdateHelp перезаписує її щоразу. Зміни правил - через погодження, код і документ архітектури, а не вручну."
     AddRule c, "Каталог", "Колонки каталогу, які заповнюєте ви: Призначення; Підпис (TRUE - показувати підпис над таблицею, FALSE - ні); Довідка (назва hlp-таблиці). Решту заповнює UpdateHelp, ваші значення зберігаються між запусками."
     AddRule c, "Каталог", "Колонка «Порушення» показує відхилення від цих правил. Макрос їх не виправляє; єдина автоматична зміна - вставка рядків над таблицею, шапка якої вище рядка 3."
     AddRule c, "Підпис", "Підпис - три клітинки над першими колонками таблиці: назва | «{i} Призначення» | «? Як заповнювати» (для hlp-таблиці - «{<-} до tblX»). Вручну не редагують: UpdateHelp перезаписує їх."
@@ -411,7 +412,6 @@ Private Function ProjectRules() As Collection
     AddRule c, "Після змін", "Після вставлення рядків чи колонок перед таблицею, перейменування таблиці чи аркуша - запустити UpdateHelp. Інакше підпис покаже «{!} немає в каталозі»."
     AddRule c, "Службові", "Без підпису за замовчуванням: tblTableCatalog, hlpProject, tblRunLog, test_… і tblTest…."
     AddRule c, "Git", "Репозиторій дзеркалить робочу книгу: ExportPowerQueriesToRepo запускають лише в ній (у тестовій книзі він зупиняється). Тестова конфігурація - tests\test_config.xlsx, тестові запити - tests\queries, фікстури - tests\fixtures."
-    AddRule c, "Довідка", "Ця таблиця (hlpProject) - копія правил з коду модуля modTableCatalog: UpdateHelp перезаписує її щоразу. Зміни правил - через погодження, код і документ архітектури, а не вручну."
     AddRule c, "Технічне", "Книга має бути збережена: формула назви в підписі використовує CELL(""filename""). Потрібен Excel 2021 або новіший (LET, XLOOKUP, IFS)."
     Set ProjectRules = c
 End Function
@@ -487,7 +487,7 @@ Private Function RangeBusy(rng As Range) As Boolean
         RangeBusy = True: Exit Function
     End If
     For Each c In rng.Cells
-        If c.formula <> "" Then RangeBusy = True: Exit Function
+        If c.Formula <> "" Then RangeBusy = True: Exit Function
     Next c
     For Each lo In rng.Worksheet.ListObjects
         If Not Intersect(lo.Range, rng) Is Nothing Then RangeBusy = True: Exit Function
@@ -585,7 +585,7 @@ Private Sub WriteLabel(lo As ListObject, wsCat As Worksheet)
         .Color = RGB(5, 99, 193)
         .Underline = xlUnderlineStyleSingle
     End With
-    ThisWorkbook.names.Add Name:=LABEL_NAME_PREFIX & lo.Name, _
+    ThisWorkbook.Names.Add Name:=LABEL_NAME_PREFIX & lo.Name, _
         RefersTo:="='" & Replace(lo.Parent.Name, "'", "''") & "'!" & rng.Address, Visible:=False
 End Sub
 
@@ -593,8 +593,8 @@ End Sub
 ' Клітинки, на які тепер заходить таблиця, не чіпає.
 Private Sub ClearAllLabels()
     Dim i As Long, nmObj As Name, rng As Range, lo As ListObject, clash As Boolean
-    For i = ThisWorkbook.names.Count To 1 Step -1
-        Set nmObj = ThisWorkbook.names(i)
+    For i = ThisWorkbook.Names.Count To 1 Step -1
+        Set nmObj = ThisWorkbook.Names(i)
         If Left$(nmObj.Name, Len(LABEL_NAME_PREFIX)) = LABEL_NAME_PREFIX Then
             Set rng = Nothing
             On Error Resume Next
@@ -673,8 +673,8 @@ Private Function DefaultDescription(tblName As String, qName As String) As Strin
             DefaultDescription = "Довідник типів періодів і максимальних номерів (PeriodType, MaxNumber)."
         Case LCase$(engTableName("Period"))
             DefaultDescription = "Межі звітного періоду (StartDate, EndDate) для календаря Calendar."
-        Case "tblschemacolumns"
-            DefaultDescription = "Каталог колонок файлів по призначеннях (результат pq_ExtractedColumns); джерело списків Data Validation."
+        Case "pq_extractedcolumns"
+            DefaultDescription = "Каталог колонок файлів по призначеннях (результат pq_ExtractedColumns); джерело списків Data Validation (GetDependentList)."
         Case "tbldatatype"
             DefaultDescription = "Довідник типів даних для колонки DataType схеми (Data Validation)."
         Case "tbllogical"

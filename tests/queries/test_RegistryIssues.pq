@@ -1,4 +1,4 @@
-// test_RegistryIssues: модульний тест fn_RegistryIssues на вбудованому реєстрі. Очікування: Pass = TRUE.
+﻿// test_RegistryIssues: модульний тест fn_RegistryIssues на вбудованому реєстрі. Очікування: Pass = TRUE.
 // Потребує в книзі довідників tblTargetType (TestCsv, TestXlsx) і tblPeriodRules (Місяць до 12).
 let
     Reg = #table(
