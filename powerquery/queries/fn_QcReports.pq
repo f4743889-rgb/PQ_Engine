@@ -2,7 +2,7 @@
 // config    - запис fn_LoadConfig() (Registry, Schema, RowFilters)
 // sourceIds - необов'язковий список SourceID: звіти лише для них (тести); null = усі активні джерела.
 //             Фільтр діє після fn_ActiveSources, тому вимкнені джерела лишаються відсутніми.
-// Викликається із запиту, що відкриває файли (qc_Reports, test_Summary): той сам читає книгу
+// Викликається із запиту, що відкриває файли (pq_QualitySummary, pq_QualityColumns, pq_QualityErrors, test_Summary): той сам читає книгу
 // через fn_LoadConfig (правило трьох видів запитів).
 (config as record, optional sourceIds as nullable list) as list =>
 let

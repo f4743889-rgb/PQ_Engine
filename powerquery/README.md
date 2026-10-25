@@ -21,6 +21,7 @@
 
 1. Аркуш HELP: tblTableCatalog, hlpProject (ця таблиця) і всі hlp-таблиці - поруч, шапки в рядку 3.
 2. Призначення таблиці описують лише в tblTableCatalog[Призначення]. Правила заповнення колонок - у hlp-таблиці, вказаній у tblTableCatalog[Довідка].
+3. Ця таблиця (hlpProject) - копія правил з коду модуля modTableCatalog: UpdateHelp перезаписує її щоразу. Зміни правил - через погодження, код і документ архітектури, а не вручну.
 
 ### Каталог
 
@@ -47,10 +48,6 @@
 
 1. Репозиторій дзеркалить робочу книгу: ExportPowerQueriesToRepo запускають лише в ній (у тестовій книзі він зупиняється). Тестова конфігурація - tests\test_config.xlsx, тестові запити - tests\queries, фікстури - tests\fixtures.
 
-### Довідка
-
-1. Ця таблиця (hlpProject) - копія правил з коду модуля modTableCatalog: UpdateHelp перезаписує її щоразу. Зміни правил - через погодження, код і документ архітектури, а не вручну.
-
 ### Технічне
 
 1. Книга має бути збережена: формула назви в підписі використовує CELL("filename"). Потрібен Excel 2021 або новіший (LET, XLOOKUP, IFS).
@@ -72,9 +69,7 @@
 | tblTargetType | SysParameters | Ручна |  | Довідник призначень (TargetType); список для Data Validation. |  |
 | tblAnalytics | UsrParametrs | Ручна |  | Елемент бізнес-даних, довідник аналітичного рівня 1 |  |
 | tblRowFilters | UsrParametrs | Ручна |  | Правила відсікання службових рядків (Всього, х тощо) до типізації. | [hlpRowFilters](#hlprowfilters) |
-| pq_QualitySummary | pq_QualitySummary | Результат запиту | pq_QualitySummary | Зведення якості по джерелах (Status, QualityFlag, кількість рядків і помилок). |  |
 | tblBusinessRules | RULES | Ручна |  | Елемент бізнес-даних, довідник правил опрацювання господарських операцій (на початковій стадії заповнення…) |  |
-| q_GO | q_GO | Результат запиту | q_GO | Дані призначення (результат q_GO). |  |
 | hlpSourceRegistry | HELP | Ручна |  | Довідник з детальним описом та призначенням колонок tblSourceRegistry |  |
 | tblErrorPolicy | HELP | Ручна |  | Довідник політик помилок (Strict, Report, Lenient) з описами. |  |
 | hlpErrorThreshold | HELP | Ручна |  | Довідник допустимих значень колонки ErrorThreshold і результату, який вони дають. |  |
@@ -143,8 +138,8 @@
 | TargetColumnName | Text | Канонічна (цільова) назва стовпця, яка буде використовуватися у підсумковій моделі після перейменування. Можна залишити порожньою, тоді буде використано значення з SourceColumnName |  |
 | DataType | Data Validation (Список) | Цільовий тип даних Power Query. | tblDataType |
 | IsRequired | Logical (TRUE / FALSE) | Чи є колонка обов'язковою. Якщо TRUE і вона відсутня у файлі, Schema Enforcer згенерує помилку структура звітного файлу. |  |
-| TrimFlag | Logical (TRUE / FALSE) | Якщо TRUE, Power Query виконає Text.Trim + Text.Clean для цієї колонки після завантаження. (прибрано подвійний пробіл) |  |
-| CustomTransform | Text | Назви дій з tblCustomTransform; кілька дій розділяються символом ; (наприклад, NullToZero;TrimFlag). Невідома назва дає помилку НевідомеПеретворення (pq_SchemaCheck). | tblCustomTransform |
+| TrimFlag | Logical (TRUE / FALSE) | Якщо TRUE, Power Query виконає Text.Trim + Text.Clean для цієї колонки після завантаження. |  |
+| CustomTransform | Text | Назви дій з tblCustomTransform; кілька дій розділяються символом ; (наприклад, Upper;NullToZero). Невідома назва дає помилку НевідомеПеретворення (pq_SchemaCheck). | tblCustomTransform |
 | Use | Logical (TRUE / FALSE) | Позначка, чи використовувати стовпець. Порожне або TRUE значення означає "так", FALSE - ні (дозволяє тимчасово вимкнути колонку) |  |
 
 ## Запити Power Query
@@ -156,7 +151,7 @@
 - [cfgQueryGroups](<queries/cfgQueryGroups.pq>) — Config
 - [cfgSettings](<queries/cfgSettings.pq>) — Config — Централізований конфіг
 - [cfgTypeMap](<queries/cfgTypeMap.pq>) — Config — Карта типів даних: значення DataType схеми → тип M
-- [cfgTransforms](<queries/cfgTransforms.pq>) — Standalone — Білий список дій. Stage визначає, до чи після типізації виконується дія. Додавати нові дії можна лише тут. Імена в схемі чутливі до регістру.
+- [cfgTransforms](<queries/cfgTransforms.pq>) — Standalone — Білий список дій. Stage визначає, до чи після типізації виконується дія. Додавати нові дії можна лише тут. Назви дій порівнюються без урахування регістру
 - [cfgReportTypes](<queries/cfgReportTypes.pq>) — Config
 - [cfgStatuses](<queries/cfgStatuses.pq>) — Config
 - [fn_LoadConfig](<queries/fn_LoadConfig.pq>) — Function
@@ -213,7 +208,6 @@
 - [fn_RowReport](<queries/fn_RowReport.pq>) — Function — звіт якості для одного рядка реєстру
 - [fn_QcReports](<queries/fn_QcReports.pq>) — Function
 - [fn_SummaryTable](<queries/fn_SummaryTable.pq>) — Function
-- [qc_Reports](<queries/qc_Reports.pq>) — Transform
 - [pq_QualitySummary](<queries/pq_QualitySummary.pq>) — Transform
 - [pq_QualityColumns](<queries/pq_QualityColumns.pq>) — Transform
 - [pq_QualityErrors](<queries/pq_QualityErrors.pq>) — Transform
@@ -240,9 +234,9 @@
 | [modCleanExportSelectedSheets](<vba/modCleanExportSelectedSheets.bas>) | CleanExportSelectedSheets | експорт виділених аркушів в окремі книги без запитів і зв'язків (v4.11) |
 | [modExportPowerQueryCodesToRepo](<vba/modExportPowerQueryCodesToRepo.bas>) | ExportPowerQueriesToRepo | експорт коду Power Query, таблиць, модулів VBA і README для Git (v4.11) |
 | [modImportPowerQueryFromFolder](<vba/modImportPowerQueryFromFolder.bas>) | ImportPQQueriesFromFolder | імпорт або оновлення запитів Power Query з файлів .pq (v4.11) |
-| [modPOWERQUERYPROFILER](<vba/modPOWERQUERYPROFILER.bas>) | ProfilePowerQueries | час оновлення кожного підключення Power Query (етап D) |
 | [modRunLog](<vba/modRunLog.bas>) | RefreshWithRunLog | оновлення книги з журналом запусків (етап D; v4.11) |
 | [modSelectSourceFiles](<vba/modSelectSourceFiles.bas>) | SelectSourceFiles | вибір файлів-джерел для рядків tblSourceRegistry |
-| [modTableCatalog](<vba/modTableCatalog.bas>) | UpdateHelp | каталог таблиць книги, підписи над таблицями і довідка (v4.11) |
 | [modSetupTestEngine](<vba/modSetupTestEngine.bas>) | SetupTestEngine | перетворення КОПІЇ книги Engine на тестову (етап C; v4.11) |
+| [modPOWERQUERYPROFILER](<vba/modPOWERQUERYPROFILER.bas>) | ProfilePowerQueries | час оновлення кожного підключення Power Query (етап D; v4.12) |
+| [modTableCatalog](<vba/modTableCatalog.bas>) | UpdateHelp | каталог таблиць книги, підписи над таблицями і довідка (v4.11) |
 

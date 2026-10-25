@@ -58,7 +58,7 @@
   - name: "cfgTransforms"
     file: "../queries/cfgTransforms.pq"
     group: "00 Конфігурація"
-    description: "Білий список дій. Stage визначає, до чи після типізації виконується дія. Додавати нові дії можна лише тут. Імена в схемі чутливі до регістру."
+    description: "Білий список дій. Stage визначає, до чи після типізації виконується дія. Додавати нові дії можна лише тут. Назви дій порівнюються без урахування регістру"
     type: "Standalone"
     loads_to_table: ""
     depends_on: []
@@ -437,25 +437,16 @@
       - "cfgReportTypes"
       - "cfgStatuses"
 
-  - name: "qc_Reports"
-    file: "../queries/qc_Reports.pq"
-    group: "06 Якість даних"
-    description: ""
-    type: "Transform"
-    loads_to_table: ""
-    depends_on:
-      - "fn_QcReports"
-      - "fn_LoadConfig"
-
   - name: "pq_QualitySummary"
     file: "../queries/pq_QualitySummary.pq"
     group: "06 Якість даних"
     description: ""
     type: "Transform"
-    loads_to_table: "pq_QualitySummary"
+    loads_to_table: ""
     depends_on:
       - "fn_SummaryTable"
-      - "qc_Reports"
+      - "fn_QcReports"
+      - "fn_LoadConfig"
 
   - name: "pq_QualityColumns"
     file: "../queries/pq_QualityColumns.pq"
@@ -465,7 +456,8 @@
     loads_to_table: ""
     depends_on:
       - "cfgReportTypes"
-      - "qc_Reports"
+      - "fn_QcReports"
+      - "fn_LoadConfig"
 
   - name: "pq_QualityErrors"
     file: "../queries/pq_QualityErrors.pq"
@@ -475,7 +467,8 @@
     loads_to_table: ""
     depends_on:
       - "cfgReportTypes"
-      - "qc_Reports"
+      - "fn_QcReports"
+      - "fn_LoadConfig"
 
   - name: "Calendar"
     file: "../queries/Calendar.pq"
@@ -526,7 +519,7 @@
     group: "07 Призначення"
     description: ""
     type: "Transform"
-    loads_to_table: "q_GO"
+    loads_to_table: ""
     depends_on:
       - "fn_ReadPurpose"
       - "fn_LoadConfig"

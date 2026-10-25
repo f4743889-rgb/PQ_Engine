@@ -20,7 +20,7 @@
         #"05 Нормалізація" = {"fn_GetSchemaRules", "fn_ApplyRowFilters", "fn_ApplyRulesEx", "fn_ApplyRules",
                               "fn_EffectiveSettings", "fn_LoadVerdict", "fn_EnforceSchema"},
         #"06 Якість даних" = {"fn_SchemaReport", "fn_ColumnNullCounts", "fn_RowReport", "fn_QcReports", "fn_SummaryTable",
-                              "qc_Reports", "pq_QualitySummary", "pq_QualityColumns", "pq_QualityErrors"},
+                              "pq_QualitySummary", "pq_QualityColumns", "pq_QualityErrors"},
         #"07 Призначення" = {"fn_ReadPurpose"},
         #"08 Модель і звіт" = {"Calendar", "fxReadNamedCell", "targetReportCell"}
     ],

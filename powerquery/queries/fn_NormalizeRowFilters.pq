@@ -1,5 +1,5 @@
 ﻿// fn_NormalizeRowFilters: нормалізація tblRowFilters (як fn_NormalizeSchema для схеми)
-// Таблицю читає запит-викликач, що сам відкриває книгу (qc_Reports, запити виклику fn_ReadPurpose):
+// Таблицю читає запит-викликач, що сам відкриває книгу (pq_Quality..., запити виклику fn_ReadPurpose):
 //   fn_LoadConfig()[RowFilters] (або fn_NormalizeRowFilters(таблиця tblRowFilters))
 // Рядки без TargetType, SourceColumnName або Operator відкидаються (їх показує pq_RowFiltersCheck).
 // Use: порожнє = TRUE, решта через fn_ToBool.

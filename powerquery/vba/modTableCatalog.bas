@@ -156,7 +156,7 @@ Private Function EnsureCatalog(ByRef wsCat As Worksheet) As ListObject
         wsCat.Name = CAT_SHEET
     End If
 
-    wsCat.Cells(HEADER_ROW_MIN, 1).Resize(1, COL_COUNT).Value = CatalogHeader()
+    wsCat.Cells(HEADER_ROW_MIN, 1).Resize(1, COL_COUNT).value = CatalogHeader()
     Set lo = wsCat.ListObjects.Add(xlSrcRange, wsCat.Cells(HEADER_ROW_MIN, 1).Resize(2, COL_COUNT), , xlYes)
     lo.Name = CAT_TABLE
     Set EnsureCatalog = lo
@@ -214,9 +214,9 @@ Private Sub EnsureCatalogColumns(cat As ListObject)
     End If
     ' тимчасові назви, щоб нові назви не збіглися зі старими в іншій позиції
     For i = 1 To COL_COUNT
-        cat.HeaderRowRange.Cells(1, i).Value = "tmp_col_" & i
+        cat.HeaderRowRange.Cells(1, i).value = "tmp_col_" & i
     Next i
-    cat.HeaderRowRange.Value = hdr
+    cat.HeaderRowRange.value = hdr
 End Sub
 
 Private Sub RaiseNoRoom(extra As Range)
@@ -235,7 +235,7 @@ Private Sub WriteCatalog(cat As ListObject, wsCat As Worksheet, data() As Varian
     If n = 0 Then Exit Sub
 
     Set body = cat.DataBodyRange
-    body.Value = data
+    body.value = data
 
     ' гіперпосилання: назва таблиці і назва довідки (якщо таблиця знайдена) -> діапазон таблиці
     For i = 1 To n
@@ -265,7 +265,7 @@ Private Sub AddTableLink(wsCat As Worksheet, anchorCell As Range, tblName As Str
     Set lo = engFindTable(tblName)
     If lo Is Nothing Then Exit Sub
     target = "'" & Replace(lo.Parent.Name, "'", "''") & "'!" & lo.Range.Address
-    wsCat.Hyperlinks.Add Anchor:=anchorCell, Address:="", SubAddress:=target, TextToDisplay:=tblName
+    wsCat.Hyperlinks.Add anchor:=anchorCell, Address:="", SubAddress:=target, TextToDisplay:=tblName
 End Sub
 
 Private Function CollectTables(ByRef tbls() As ListObject) As Long
@@ -327,7 +327,7 @@ Private Function SyncProjectHelp(wsCat As Worksheet) As String
     If Not lo Is Nothing Then
         ' порівняння з кодом
         If lo.Range.Rows.Count = n + 1 And lo.Range.Columns.Count = 3 Then
-            cur = lo.Range.Value
+            cur = lo.Range.value
             same = True
             For i = 1 To n + 1
                 If CStr(cur(i, 1)) <> CStr(arr(i, 1)) Or CStr(cur(i, 2)) <> CStr(arr(i, 2)) Or _
@@ -348,7 +348,7 @@ Private Function SyncProjectHelp(wsCat As Worksheet) As String
         If Not lo.DataBodyRange Is Nothing Then lo.DataBodyRange.ClearContents
         lo.Resize top.Resize(n + 1, 3)
         ClearOutside oldRng, lo.Range
-        top.Resize(n + 1, 3).Value = arr
+        top.Resize(n + 1, 3).value = arr
         FormatProjectHelp lo
         SyncProjectHelp = "оновлено"
         Exit Function
@@ -366,7 +366,7 @@ Private Function SyncProjectHelp(wsCat As Worksheet) As String
     col = col + 2
 
     Set top = wsCat.Cells(HEADER_ROW_MIN, col)
-    top.Resize(n + 1, 3).Value = arr
+    top.Resize(n + 1, 3).value = arr
     Set lo = wsCat.ListObjects.Add(xlSrcRange, top.Resize(n + 1, 3), , xlYes)
     lo.Name = PROJECT_HELP
     FormatProjectHelp lo
@@ -487,7 +487,7 @@ Private Function RangeBusy(rng As Range) As Boolean
         RangeBusy = True: Exit Function
     End If
     For Each c In rng.Cells
-        If c.Formula <> "" Then RangeBusy = True: Exit Function
+        If c.formula <> "" Then RangeBusy = True: Exit Function
     Next c
     For Each lo In rng.Worksheet.ListObjects
         If Not Intersect(lo.Range, rng) Is Nothing Then RangeBusy = True: Exit Function
@@ -585,7 +585,7 @@ Private Sub WriteLabel(lo As ListObject, wsCat As Worksheet)
         .Color = RGB(5, 99, 193)
         .Underline = xlUnderlineStyleSingle
     End With
-    ThisWorkbook.Names.Add Name:=LABEL_NAME_PREFIX & lo.Name, _
+    ThisWorkbook.names.Add Name:=LABEL_NAME_PREFIX & lo.Name, _
         RefersTo:="='" & Replace(lo.Parent.Name, "'", "''") & "'!" & rng.Address, Visible:=False
 End Sub
 
@@ -593,8 +593,8 @@ End Sub
 ' Клітинки, на які тепер заходить таблиця, не чіпає.
 Private Sub ClearAllLabels()
     Dim i As Long, nmObj As Name, rng As Range, lo As ListObject, clash As Boolean
-    For i = ThisWorkbook.Names.Count To 1 Step -1
-        Set nmObj = ThisWorkbook.Names(i)
+    For i = ThisWorkbook.names.Count To 1 Step -1
+        Set nmObj = ThisWorkbook.names(i)
         If Left$(nmObj.Name, Len(LABEL_NAME_PREFIX)) = LABEL_NAME_PREFIX Then
             Set rng = Nothing
             On Error Resume Next

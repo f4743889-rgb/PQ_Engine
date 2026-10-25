@@ -2,7 +2,7 @@ Attribute VB_Name = "modPOWERQUERYPROFILER"
 Option Explicit
 
 ' ============================================================================
-' modPOWERQUERYPROFILER: час оновлення кожного підключення Power Query (етап D)
+' modPOWERQUERYPROFILER: час оновлення кожного підключення Power Query (етап D; v4.12)
 ' Потребує modEngineCommon.
 '
 ' ProfilePowerQueries послідовно оновлює OLEDB-підключення книги, які щось завантажують
@@ -12,23 +12,51 @@ Option Explicit
 '     англійському («Query - X»), і в українському («Запит – X») Excel;
 '   * сортування: новіші запуски зверху, у межах запуску - найдовші запити зверху;
 '   * під час заміру обчислення вручну, фоновий режим підключень потім відновлюється;
-'   * необов'язковий прогрівальний прохід; колонка Notes: «після прогріву».
+'   * необов'язковий прогрівальний прохід; колонка Notes: «після прогріву» і джерело живлення
+'     (мережа / батарея: на батареї ноутбук сповільнює обчислення, заміри непорівнянні);
+'   * колонка Seq (v4.12): порядковий номер оновлення в запуску - видно, чи збігся стрибок
+'     тривалості з тим, що оновлювалося перед ним.
+' Правила порівняння (architecture, 6.12): лише від мережі в режимі найкращої продуктивності;
+' розкид між запусками +-20-30%, тому варіанти порівнювати в одному запуску (два запити поруч)
+' або за медіаною 3+ запусків.
 '
 ' Важливо для читання результатів: кожне підключення оновлюється окремо, тому його час
 ' включає обчислення всіх запитів, від яких воно залежить (кешу між оновленнями немає).
 ' Сума тривалостей тому більша за час «Оновити все».
 ' ============================================================================
 
+Private Type SYSTEM_POWER_STATUS
+    ACLineStatus As Byte
+    BatteryFlag As Byte
+    BatteryLifePercent As Byte
+    SystemStatusFlag As Byte
+    BatteryLifeTime As Long
+    BatteryFullLifeTime As Long
+End Type
+
 #If VBA7 Then
+Private Declare PtrSafe Function GetSystemPowerStatus Lib "kernel32" (ByRef lpSystemPowerStatus As SYSTEM_POWER_STATUS) As Long
 Private Declare PtrSafe Function QueryPerformanceCounter Lib "kernel32" (ByRef lpPerformanceCount As Currency) As Long
 Private Declare PtrSafe Function QueryPerformanceFrequency Lib "kernel32" (ByRef lpFrequency As Currency) As Long
 #Else
+Private Declare Function GetSystemPowerStatus Lib "kernel32" (ByRef lpSystemPowerStatus As SYSTEM_POWER_STATUS) As Long
 Private Declare Function QueryPerformanceCounter Lib "kernel32" (ByRef lpPerformanceCount As Currency) As Long
 Private Declare Function QueryPerformanceFrequency Lib "kernel32" (ByRef lpFrequency As Currency) As Long
 #End If
 
 Private Const DATA_SHEET As String = "PQ_Profiler"
 Private Const SUMMARY_SHEET As String = "PQ_ProfilerSummary"
+
+' Джерело живлення: "мережа", "батарея" або "невідомо"
+Private Function PowerSource() As String
+    Dim ps As SYSTEM_POWER_STATUS
+    PowerSource = "невідомо"
+    If GetSystemPowerStatus(ps) = 0 Then Exit Function
+    Select Case ps.ACLineStatus
+        Case 1: PowerSource = "мережа"
+        Case 0: PowerSource = "батарея"
+    End Select
+End Function
 
 Private Function GetPreciseTime() As Double
     Static frequency As Double
@@ -84,7 +112,10 @@ Public Sub ProfilePowerQueries()
     warm = MsgBox("Підключень для заміру: " & total & " (лише підключення пропущено: " & skipped & ")." & vbCrLf & vbCrLf & _
                   "Зробити прогрівальний прохід без запису?" & vbCrLf & _
                   "Перше оновлення платить за запуск Power Query і читання файлів з диска; прогрів робить" & vbCrLf & _
-                  "заміри порівнянними, але подвоює час.", vbYesNoCancel + vbQuestion, "Power Query Profiler")
+                  "заміри порівнянними, але подвоює час." & vbCrLf & vbCrLf & _
+                  "Живлення: " & PowerSource() & IIf(PowerSource() = "батарея", _
+                  " - на батареї заміри непорівнянні; підключіть мережу і виберіть режим найкращої продуктивності.", ""), _
+                  vbYesNoCancel + IIf(PowerSource() = "батарея", vbExclamation, vbQuestion), "Power Query Profiler")
     If warm = vbCancel Then GoTo CleanExit
 
     ' ручний режим обчислення: інакше кожне завантаження таблиці запускає перерахунок книги,
@@ -112,7 +143,7 @@ Public Sub ProfilePowerQueries()
         processed = processed + 1
         cName = conn.Name
         qName = QueryNameOf(conn)
-        notes = IIf(warm = vbYes, "після прогріву", "")
+        notes = IIf(warm = vbYes, "після прогріву; ", "") & "живлення: " & PowerSource()
 
         Application.StatusBar = "Power Query Profiler: " & processed & "/" & total & " - " & qName
         DoEvents
@@ -120,7 +151,7 @@ Public Sub ProfilePowerQueries()
         elapsed = RefreshTimed(conn, status, errorText)
         If status = "ERROR" Then errCount = errCount + 1
 
-        WriteResult ws, nextRow, runNumber, startDateTime, qName, cName, elapsed, status, errorText, notes
+        WriteResult ws, nextRow, runNumber, startDateTime, qName, cName, elapsed, status, errorText, notes, processed
         nextRow = nextRow + 1
         sumTime = sumTime + elapsed
         If elapsed > slowTime Then slowTime = elapsed: slowName = qName
@@ -222,6 +253,7 @@ Private Function GetDataSheet(ByVal wb As Workbook) As Worksheet
         ws.Range("A1:I1").value = Array("Run", "Date/Time", "Query", "Connection", "Duration (sec)", _
                                         "Status", "Error", "Duration (min)", "Notes")
     End If
+    If IsEmpty(ws.Range("J1").value) Then ws.Range("J1").value = "Seq"     ' з v4.12; старі рядки без номера
     Set GetDataSheet = ws
 End Function
 
@@ -240,7 +272,7 @@ End Function
 Private Sub WriteResult(ByVal ws As Worksheet, ByVal r As Long, ByVal runNumber As Long, _
                         ByVal startDateTime As Date, ByVal qName As String, ByVal cName As String, _
                         ByVal elapsed As Double, ByVal status As String, ByVal errorText As String, _
-                        ByVal notes As String)
+                        ByVal notes As String, ByVal seq As Long)
     ws.Cells(r, 1).value = runNumber
     ws.Cells(r, 2).value = startDateTime
     ws.Cells(r, 3).value = qName
@@ -250,6 +282,7 @@ Private Sub WriteResult(ByVal ws As Worksheet, ByVal r As Long, ByVal runNumber 
     ws.Cells(r, 7).value = errorText
     ws.Cells(r, 8).value = elapsed / 60
     ws.Cells(r, 9).value = notes
+    ws.Cells(r, 10).value = seq
 End Sub
 
 Private Sub FormatDataSheet(ByVal ws As Worksheet)
@@ -257,7 +290,7 @@ Private Sub FormatDataSheet(ByVal ws As Worksheet)
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     ws.Rows(1).Font.Bold = True
     If ws.AutoFilterMode Then ws.AutoFilterMode = False
-    ws.Range("A1:I" & Application.Max(lastRow, 2)).AutoFilter
+    ws.Range("A1:J" & Application.Max(lastRow, 2)).AutoFilter
     ws.Columns("A").ColumnWidth = 8
     ws.Columns("B").ColumnWidth = 20
     ws.Columns("C").ColumnWidth = 35
@@ -266,7 +299,8 @@ Private Sub FormatDataSheet(ByVal ws As Worksheet)
     ws.Columns("F").ColumnWidth = 10
     ws.Columns("G").ColumnWidth = 50
     ws.Columns("H").ColumnWidth = 15
-    ws.Columns("I").ColumnWidth = 20
+    ws.Columns("I").ColumnWidth = 32
+    ws.Columns("J").ColumnWidth = 6
     If lastRow >= 2 Then
         ws.Range("B2:B" & lastRow).NumberFormat = "yyyy-mm-dd hh:mm:ss"
         ws.Range("E2:E" & lastRow).NumberFormat = "0.000"
@@ -283,7 +317,7 @@ Private Sub SortDataSheet(ByVal ws As Worksheet)
         .SortFields.Clear
         .SortFields.Add key:=ws.Range("A2:A" & lastRow), SortOn:=xlSortOnValues, Order:=xlDescending
         .SortFields.Add key:=ws.Range("E2:E" & lastRow), SortOn:=xlSortOnValues, Order:=xlDescending
-        .SetRange ws.Range("A1:I" & lastRow)
+        .SetRange ws.Range("A1:J" & lastRow)
         .header = xlYes
         .MatchCase = False
         .Orientation = xlTopToBottom

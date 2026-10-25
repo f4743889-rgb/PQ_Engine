@@ -12,5 +12,5 @@ Enabled;Logical (TRUE / FALSE);Дозволяє тимчасово відклю�
 Delimiter;Text (Опційно);"Роздільник CSV для цього джерела (наприклад, ; або ,). Порожньо — cfgSettings[CsvDelimiter].";
 Encoding;Number (Опційно);Кодова сторінка CSV: 65001 (UTF-8) або 1251. Мітка BOM у файлі має пріоритет. Порожньо — cfgSettings[CsvEncoding].;
 Culture;Text (Опційно);Культура розпізнавання чисел і дат під час типізації (наприклад, uk-UA). Порожньо — cfgSettings[Culture].;
-ErrorPolicy;Text ;Рівень суворості обробки помилок (Strict, Report, Lenient), опис — у tblErrorPolicy. Порожньо — cfgSettings[ErrorPolicy]. Задається лише тут або в cfgSettings.;tblErrorPolicy
+ErrorPolicy;Text;Рівень суворості обробки помилок (Strict, Report, Lenient), опис — у tblErrorPolicy. Порожньо — cfgSettings[ErrorPolicy]. Задається лише тут або в cfgSettings.;tblErrorPolicy
 ErrorThreshold;Number;Поріг частки рядків з помилками (лише для Report і Lenient). Порожньо — cfgSettings[ErrorThreshold]. Допустимі значення — у hlpErrorThreshold.;hlpErrorThreshold
