@@ -140,16 +140,16 @@ End Sub
 ' ================== ВИБІР І ПЕРЕВІРКА ОДНОГО ФАЙЛУ ==================
 Private Function PickFile(lo As ListObject, r As Long, k As Long, n As Long, _
                           cur As String, ByRef newPath As String) As PickResult
-    Dim req As Boolean, title As String, f As Variant, missing As String, ans As VbMsgBoxResult
+    Dim req As Boolean, dlgTitle As String, f As Variant, missing As String, ans As VbMsgBoxResult
     req = engToBool(engCell(lo, r, "IsRequired"), True)
 
-    title = "Файл " & k & " з " & n & ": " & RowLabel(lo, r) & IIf(req, " [обов'язковий]", "")
-    If cur <> "" And Not engFileExists(cur) Then title = title & " (збережений шлях недійсний)"
+    dlgTitle = "Файл " & k & " з " & n & ": " & RowLabel(lo, r) & IIf(req, " [обов'язковий]", "")
+    If cur <> "" And Not engFileExists(cur) Then dlgTitle = dlgTitle & " (збережений шлях недійсний)"
 
     GoToFolderOf cur
 
     Do
-        f = Application.GetOpenFilename(FileFilter(), 1, title)
+        f = Application.GetOpenFilename(FileFilter(), 1, dlgTitle)
 
         If VarType(f) = vbBoolean Then          ' діалог скасовано
             If Not req Then
@@ -182,31 +182,31 @@ End Function
 
 ' Проблеми заголовка CSV: відсутні обов'язкові колонки схеми і повторювані назви.
 ' "" = усе гаразд або перевірка неможлива.
-Private Function MissingRequiredColumns(lo As ListObject, r As Long, path As String) As String
-    If Not engIsExtension(path, "Csv") Then Exit Function   ' Excel перевіряє Engine після оновлення
+Private Function MissingRequiredColumns(lo As ListObject, r As Long, filePath As String) As String
+    If Not engIsExtension(filePath, "Csv") Then Exit Function   ' Excel перевіряє Engine після оновлення
 
     Dim reqCols As Collection
     Set reqCols = RequiredSchemaColumns(Trim$(CStr(engCell(lo, r, "TargetType"))))
     If reqCols.Count = 0 Then Exit Function
 
-    Dim delim As String, enc As Long, header As String, ok As Boolean
+    Dim delim As String, enc As Long, hdrLine As String, ok As Boolean
     delim = Trim$(CStr(engCellOpt(lo, r, "Delimiter", "")))
     If delim = "" Then delim = CfgDelimiter()
     enc = CfgEncoding()
     If IsNumeric(engCellOpt(lo, r, "Encoding", "")) Then enc = CLng(engCellOpt(lo, r, "Encoding", ""))
 
     Dim cs As String
-    cs = DetectBom(path)                               ' BOM має пріоритет, як у Power Query
+    cs = DetectBom(filePath)                               ' BOM має пріоритет, як у Power Query
     If cs = "" Then cs = CharsetOf(enc)
-    header = ReadFirstLine(path, cs, ok)
+    hdrLine = ReadFirstLine(filePath, cs, ok)
     If Not ok Then
         MissingRequiredColumns = "Файл не вдалося прочитати (зайнятий іншою програмою або пошкоджений)."
         Exit Function
     End If
 
     Dim miss As String, nCols As Long, dupl As String
-    miss = MissingList(header, delim, reqCols, nCols)
-    dupl = DuplicateNames(header, delim)
+    miss = MissingList(hdrLine, delim, reqCols, nCols)
+    dupl = DuplicateNames(hdrLine, delim)
     If miss = "" And dupl = "" Then Exit Function
 
     Const DUP_NOTE As String = "Engine візьме першу колонку з такою назвою, а повтори отримають суфікс _1, _2."
@@ -218,7 +218,7 @@ Private Function MissingRequiredColumns(lo As ListObject, r As Long, path As Str
     ' діагностика: інше кодування, інший роздільник, прочитаний заголовок
     Dim hint As String, alt As String, altHeader As String, ok2 As Boolean, dummy As Long
     alt = IIf(cs = "utf-8", "windows-1251", "utf-8")
-    altHeader = ReadFirstLine(path, alt, ok2)
+    altHeader = ReadFirstLine(filePath, alt, ok2)
     If ok2 Then
         If MissingList(altHeader, delim, reqCols, dummy) = "" Then
             hint = vbCrLf & "З кодуванням " & alt & " усі колонки знайдено: задайте Encoding = " & _
@@ -232,7 +232,7 @@ Private Function MissingRequiredColumns(lo As ListObject, r As Long, path As Str
 
     MissingRequiredColumns = "Відсутні обов'язкові колонки (роздільник """ & _
         IIf(delim = vbTab, "Tab", delim) & """, кодування " & cs & "):" & miss & vbCrLf & hint & _
-        vbCrLf & "Прочитаний заголовок: " & Left$(header, 150) & IIf(Len(header) > 150, "...", "")
+        vbCrLf & "Прочитаний заголовок: " & Left$(hdrLine, 150) & IIf(Len(hdrLine) > 150, "...", "")
     If dupl <> "" Then
         MissingRequiredColumns = MissingRequiredColumns & vbCrLf & vbCrLf & _
             "Повторювані назви колонок:" & dupl & vbCrLf & DUP_NOTE
@@ -240,10 +240,10 @@ Private Function MissingRequiredColumns(lo As ListObject, r As Long, path As Str
 End Function
 
 ' Перелік обов'язкових колонок, яких немає в заголовку; nCols = кількість колонок заголовка
-Private Function MissingList(header As String, delim As String, reqCols As Collection, _
+Private Function MissingList(hdrLine As String, delim As String, reqCols As Collection, _
                              ByRef nCols As Long) As String
     Dim cols As Collection, c As Variant, miss As String
-    Set cols = SplitCsvLine(header, delim)
+    Set cols = SplitCsvLine(hdrLine, delim)
     nCols = cols.Count
     For Each c In reqCols
         If Not InCollection(CStr(c), cols) Then miss = miss & vbCrLf & "  * " & CStr(c)
@@ -252,11 +252,11 @@ Private Function MissingList(header As String, delim As String, reqCols As Colle
 End Function
 
 ' Назви, що трапляються в заголовку кілька разів (точний збіг, як у Engine)
-Private Function DuplicateNames(header As String, delim As String) As String
+Private Function DuplicateNames(hdrLine As String, delim As String) As String
     Dim cnt As Object, c As Variant, k As Variant, res As String
     Set cnt = CreateObject("Scripting.Dictionary")
     cnt.CompareMode = vbBinaryCompare
-    For Each c In SplitCsvLine(header, delim)
+    For Each c In SplitCsvLine(hdrLine, delim)
         If CStr(c) <> "" Then cnt(CStr(c)) = cnt(CStr(c)) + 1
     Next c
     For Each k In cnt.Keys
@@ -266,13 +266,13 @@ Private Function DuplicateNames(header As String, delim As String) As String
 End Function
 
 ' Кодування за BOM: "utf-8", "unicode" (UTF-16 LE) або "" (BOM немає)
-Private Function DetectBom(path As String) As String
+Private Function DetectBom(filePath As String) As String
     Dim st As Object, b() As Byte, n As Long
     On Error GoTo Done
     Set st = CreateObject("ADODB.Stream")
     st.Type = 1
     st.Open
-    st.LoadFromFile path
+    st.LoadFromFile filePath
     n = st.Size
     If n > 3 Then n = 3
     If n >= 2 Then b = st.Read(n)
@@ -346,17 +346,17 @@ End Function
 
 ' Той самий шлях + TableSheetName у кількох рядках одного TargetType (як ДублюванняФайлу в Engine)
 Private Function DuplicateFiles(lo As ListObject, rowsIdx As Collection, picks() As String) As String
-    Dim seen As Object, k As Long, r As Long, key As String, res As String
+    Dim seen As Object, k As Long, r As Long, keyName As String, res As String
     Set seen = CreateObject("Scripting.Dictionary")
     For k = 1 To rowsIdx.Count
         If picks(k) <> "" Then
             r = rowsIdx(k)
-            key = LCase$(Trim$(CStr(engCell(lo, r, "TargetType")))) & "|" & LCase$(picks(k)) & "|" & _
+            keyName = LCase$(Trim$(CStr(engCell(lo, r, "TargetType")))) & "|" & LCase$(picks(k)) & "|" & _
                   LCase$(Trim$(CStr(engCellOpt(lo, r, "TableSheetName", ""))))
-            If seen.Exists(key) Then
-                res = res & IIf(res = "", "", "; ") & seen(key) & " і " & CStr(engCell(lo, r, "SourceID"))
+            If seen.Exists(keyName) Then
+                res = res & IIf(res = "", "", "; ") & seen(keyName) & " і " & CStr(engCell(lo, r, "SourceID"))
             Else
-                seen.Add key, CStr(engCell(lo, r, "SourceID"))
+                seen.Add keyName, CStr(engCell(lo, r, "SourceID"))
             End If
         End If
     Next k
@@ -427,9 +427,9 @@ Private Function QualityReport() As String
 End Function
 
 ' ================== ДОПОМІЖНІ: ТАБЛИЦІ ==================
-Private Function HasColumns(lo As ListObject, names As Variant, Optional silent As Boolean = False) As Boolean
+Private Function HasColumns(lo As ListObject, colNames As Variant, Optional silent As Boolean = False) As Boolean
     Dim nm As Variant, miss As String
-    For Each nm In names
+    For Each nm In colNames
         If Not engColumnExists(lo, CStr(nm)) Then miss = miss & " " & CStr(nm)
     Next nm
     HasColumns = (miss = "")
@@ -496,17 +496,17 @@ Private Function RowLabel(lo As ListObject, r As Long) As String
 End Function
 
 ' ================== ДОПОМІЖНІ: ЗНАЧЕННЯ, ФАЙЛИ, CSV ==================
-Private Function FileNameOf(path As String) As String
-    FileNameOf = Mid$(path, InStrRev(path, "\") + 1)
+Private Function FileNameOf(filePath As String) As String
+    FileNameOf = Mid$(filePath, InStrRev(filePath, "\") + 1)
 End Function
 
 ' Відкрити діалог у теці поточного файла (лише локальні диски)
-Private Sub GoToFolderOf(path As String)
-    Dim p As Long: p = InStrRev(path, "\")
+Private Sub GoToFolderOf(filePath As String)
+    Dim p As Long: p = InStrRev(filePath, "\")
     If p < 3 Then Exit Sub
     On Error Resume Next
-    If Mid$(path, 2, 1) = ":" Then ChDrive Left$(path, 1)
-    ChDir Left$(path, p - 1)
+    If Mid$(filePath, 2, 1) = ":" Then ChDrive Left$(filePath, 1)
+    ChDir Left$(filePath, p - 1)
     On Error GoTo 0
 End Sub
 
@@ -520,14 +520,14 @@ Private Function CharsetOf(enc As Long) As String
     End Select
 End Function
 
-Private Function ReadFirstLine(path As String, charset As String, ByRef ok As Boolean) As String
+Private Function ReadFirstLine(filePath As String, csName As String, ByRef ok As Boolean) As String
     Dim st As Object, txt As String, p As Long
     On Error GoTo Bad
     Set st = CreateObject("ADODB.Stream")
     st.Type = 2
-    st.charset = charset
+    st.charset = csName
     st.Open
-    st.LoadFromFile path
+    st.LoadFromFile filePath
     txt = st.ReadText(16384)
     st.Close
     p = InStr(txt, vbLf)

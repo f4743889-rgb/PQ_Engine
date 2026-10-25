@@ -1,4 +1,4 @@
-﻿// test_NullCounts: fn_ColumnNullCounts проти старого способу підрахунку null. Очікування: Pass = TRUE.
+// test_NullCounts: fn_ColumnNullCounts проти старого способу підрахунку null. Очікування: Pass = TRUE.
 // Таблиця з null, порожнім текстом і клітинкою-помилкою (b у третьому рядку).
 let
     T0 = #table({"a", "b", "c"}, {{"1", null, "x"}, {null, null, ""}, {"3", "zz", null}, {"4", "5", "y"}}),

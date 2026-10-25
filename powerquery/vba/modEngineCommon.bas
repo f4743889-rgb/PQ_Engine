@@ -2,7 +2,7 @@ Attribute VB_Name = "modEngineCommon"
 Option Explicit
 
 ' ============================================================================
-' modEngineCommon: спільні процедури макросів Power Query Engine (аудит D13)
+' modEngineCommon: спільні процедури макросів Power Query Engine (аудит D13; v4.11)
 '
 ' Імпортуйте разом із modSelectSourceFiles, modExportPowerQueryCodesToRepo,
 ' modPOWERQUERYPROFILER, modRunLog, modCleanExportSelectedSheets: вони викликають
@@ -104,14 +104,14 @@ Public Function engLoadSettings() As String
 End Function
 
 ' Значення параметра; при першому зверненні читає cfgSettings
-Public Function engSetting(key As String) As Variant
+Public Function engSetting(keyName As String) As Variant
     If mSettings Is Nothing Then engLoadSettings
-    If mSettings.Exists(key) Then engSetting = mSettings(key) Else engSetting = Empty
+    If mSettings.Exists(keyName) Then engSetting = mSettings(keyName) Else engSetting = Empty
 End Function
 
 ' Ім'я таблиці книги з cfgSettings[Tables]: engTableName("Registry") -> "tblSourceRegistry"
-Public Function engTableName(key As String) As String
-    engTableName = CStr(engSetting("Tables." & key))
+Public Function engTableName(keyName As String) As String
+    engTableName = CStr(engSetting("Tables." & keyName))
 End Function
 
 ' Попередження останнього engLoadSettings ("" = усе прочитано)
@@ -120,9 +120,9 @@ Public Function engSettingsNote() As String
 End Function
 
 ' Розширення, які читає Engine: kind = "Csv", "Excel" або "" (будь-яке з них)
-Public Function engIsExtension(path As String, Optional kind As String = "") As Boolean
+Public Function engIsExtension(filePath As String, Optional kind As String = "") As Boolean
     Dim ext As String
-    ext = "|" & LCase$(Mid$(path, InStrRev(path, ".") + 1)) & "|"
+    ext = "|" & LCase$(Mid$(filePath, InStrRev(filePath, ".") + 1)) & "|"
     If kind = "" Then
         engIsExtension = InStr(1, CStr(engSetting("Extensions.Csv")) & CStr(engSetting("Extensions.Excel")), ext) > 0
     Else
@@ -144,10 +144,10 @@ Public Function engToBool(v As Variant, dflt As Boolean) As Boolean
 End Function
 
 ' Список рядків у лапках після «ключ = {...}» у вигляді "|a|b|"; "" якщо ключа немає
-Private Function QuotedListAfter(src As String, key As String) As String
+Private Function QuotedListAfter(src As String, keyName As String) As String
     Dim re As Object, rq As Object, it As Object, res As String
     Set re = CreateObject("VBScript.RegExp")
-    re.Pattern = "\b" & key & "\s*=\s*\{([^}]*)\}"
+    re.Pattern = "\b" & keyName & "\s*=\s*\{([^}]*)\}"
     If Not re.Test(src) Then Exit Function
     Set rq = CreateObject("VBScript.RegExp")
     rq.Global = True
@@ -321,7 +321,9 @@ End Function
 
 ' Завантажує запит на аркуш як таблицю (без оновлення: дані з'являться після «Оновити все»
 ' або lo.QueryTable.Refresh). Якщо запит уже завантажено, повертає наявну таблицю.
-Public Function engLoadQueryToSheet(queryName As String, ws As Worksheet, topLeft As String) As ListObject
+' Правила hlpProject: таблиця називається як запит (q_, pq_, test_ - роль видно з назви),
+' шапка не вище рядка 3 (topLeft за замовчуванням A3).
+Public Function engLoadQueryToSheet(queryName As String, ws As Worksheet, Optional topLeft As String = "A3") As ListObject
     Dim lo As ListObject
     Set lo = engFindQueryTable(queryName)
     If Not lo Is Nothing Then Set engLoadQueryToSheet = lo: Exit Function
@@ -343,7 +345,7 @@ Public Function engLoadQueryToSheet(queryName As String, ws As Worksheet, topLef
     End With
     On Error Resume Next
     lo.QueryTable.WorkbookConnection.RefreshWithRefreshAll = True     ' оновлювати разом з «Оновити все»
-    lo.Name = "tbl_" & queryName
+    lo.Name = queryName
     On Error GoTo 0
     Set engLoadQueryToSheet = lo
 End Function
@@ -372,9 +374,9 @@ Public Function engRefreshAllSync() As String
 End Function
 
 ' ================== ФАЙЛИ ==================
-Public Function engFileExists(path As String) As Boolean
+Public Function engFileExists(filePath As String) As Boolean
     On Error Resume Next
-    engFileExists = (Len(path) > 0 And Dir(path) <> "")
+    engFileExists = (Len(filePath) > 0 And Dir(filePath) <> "")
     On Error GoTo 0
 End Function
 
@@ -397,25 +399,25 @@ Public Sub engEnsureFolder(ByVal folderPath As String)
     fso.CreateFolder folderPath
 End Sub
 
-Public Function engReadUtf8(path As String) As String
+Public Function engReadUtf8(filePath As String) As String
     Dim st As Object
     Set st = CreateObject("ADODB.Stream")
     st.Type = 2
     st.charset = "utf-8"
     st.Open
-    st.LoadFromFile path
+    st.LoadFromFile filePath
     engReadUtf8 = st.ReadText
     st.Close
 End Function
 
 ' Запис тексту в UTF-8 (з BOM, як і раніше в експорті запитів)
-Public Sub engWriteUtf8(path As String, txt As String)
+Public Sub engWriteUtf8(filePath As String, txt As String)
     Dim st As Object
     Set st = CreateObject("ADODB.Stream")
     st.Type = 2
     st.charset = "utf-8"
     st.Open
     st.WriteText txt
-    st.SaveToFile path, 2
+    st.SaveToFile filePath, 2
     st.Close
 End Sub

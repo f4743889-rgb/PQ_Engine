@@ -1,25 +1,11 @@
-﻿SourceID;TargetType;FullPath;Path;FileName;TableSheetName;PeriodType;PeriodNumber;IsRequired;Enabled;ErrorPolicy;ErrorThreshold
-C01;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C01_ok.csv;;Місяць;1;;;;
-C02;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C02_service_rows.csv;;Місяць;2;;;;
-C03;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C03_type_errors.csv;;Місяць;3;;;;
-C04;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C04_threshold.csv;;Місяць;4;;;;0.1
-C05;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C05_strict.csv;;Місяць;5;;;Strict;
-C06;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C06_lenient.csv;;Місяць;6;;;Lenient;
-C07;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C07_missing_required.csv;;Місяць;7;;;;
-C08;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C08_missing_optional.csv;;Місяць;8;;;;
-C09;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C09_dup_header.csv;;Місяць;9;;;;
-C10;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C10_empty.csv;;Місяць;10;;;;
-C11;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C11_missing.csv;;Місяць;11;FALSE;;;
-C12;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C12_missing.csv;;Місяць;12;TRUE;;;
-C13;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C13_utf8_no_bom.csv;;Квартал;1;;;;
-C14;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C14_cp1251.csv;;Квартал;2;;;;
-C15;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C15_disabled.csv;;Квартал;4;;FALSE;;
-C16;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C16_dup_period.csv;;Місяць;1;;;;
-C17;TestCsv;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;C01_ok.csv;;Квартал;3;;;;
-X01;TestXlsx;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;X01_table.xlsx;tblData;Місяць;1;;;;
-X02;TestXlsx;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;X02_na_error.xlsx;Аркуш1;Місяць;2;;;;
-X03;TestXlsx;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;X03_wrong_sheet.xlsx;НемаТакого;Місяць;3;;;;
-X04;TestXlsx;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;X04_ambiguous.xlsx;;Місяць;4;;;;
-X05;TestXlsx;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;X05_corrupt.xlsx;;Місяць;5;;;;
-X06;TestXlsx;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;X06_unsupported.json;;Місяць;6;;;;
-N01;TestNoSchema;;D:\TEST_PQ_Engine_v4.10\test_engine\fixtures;N01_no_schema.csv;;Рік;1;;;;
+﻿SourceID;TargetType;FullPath;Path;FileName;TableSheetName;PeriodType;PeriodNumber;IsRequired;Enabled;Delimiter;Encoding;Culture;ErrorPolicy;ErrorThreshold
+GO1;GO;D:\EngineTests\csv\АналізГО_Кв1.csv;;;;Квартал;1;TRUE;TRUE;;;;;
+GO2;GO;D:\EngineTests\csv\АналізГО_Кв2.csv;;;;квартал;2;;TRUE;;;;;
+GO3;GO;D:\EngineTests\csv\АналізГО_Кв3.csv;;;;Квартал;3;;TRUE;;;;;
+OSVTMC1;OSVTMC;D:\EngineTests\csv\ОСВТМЦ 9 міс 2026 ПОВНА.csv;;;;Рік;1;;TRUE;;;;;
+IK1;IK;D:\EngineTests\csv\АналізІК_Дата30.09.2026.csv;;;;;;;TRUE;;;;;
+KGO1;KGO;D:\EngineTests\csv\АналізКГО_Дата30.09.2026.csv;;;;;;;TRUE;;;;;
+INMA1;INMA;D:\EngineTests\csv\АналізІНМА_Дата30.09.2026.csv;;;;;;;TRUE;;;;;
+BZ1;BZ;D:\EngineTests\csv\Аналіз бюджетних зобов'язань.csv;;;;Рік;1;;TRUE;;;;;
+PD1;PD;D:\EngineTests\csv\Аналіз платіжних документів.csv;;;;Рік;1;;TRUE;;;;;
+Registry1;Registry;D:\EngineTests\testfile\Реєстр test.xlsm;;;Реєстр;;;;FALSE;;;;;

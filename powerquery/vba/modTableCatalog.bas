@@ -2,7 +2,7 @@ Attribute VB_Name = "modTableCatalog"
 Option Explicit
 
 ' ============================================================================
-' modTableCatalog: каталог таблиць книги, підписи над таблицями і довідка (v4.11e)
+' modTableCatalog: каталог таблиць книги, підписи над таблицями і довідка (v4.11)
 ' Потребує modEngineCommon (engFindTable, engColumnExists, engCell, engCellOpt, engQueryNameOf,
 ' engTableName). Потрібен Excel 2021+: формули підписів використовують LET, XLOOKUP, IFS.
 '
@@ -48,8 +48,8 @@ Public Sub UpdateHelp()
     Dim wsCat As Worksheet, cat As ListObject, kept As Object, lo As ListObject
     Dim tbls() As ListObject, n As Long, i As Long, data() As Variant, lblOk() As Boolean
     Dim oldScreen As Boolean, ok As Boolean, lbl As Boolean, rec As Variant, lblV As Variant
-    Dim nm As String, key As String, qName As String, desc As String, helpName As String, iss As String
-    Dim inserted As Long, failed As String, created As Boolean
+    Dim nm As String, keyName As String, qName As String, desc As String, helpName As String, iss As String
+    Dim inserted As Long, failed As String, helpSync As String
     Dim labeled As Long, nIssues As Long, filled As Long, removed As Long
 
     oldScreen = Application.ScreenUpdating
@@ -61,7 +61,7 @@ Public Sub UpdateHelp()
     ClearAllLabels
     inserted = EnsureHeaderRows(failed)
     EnsureCatalogColumns cat
-    created = EnsureProjectHelp(wsCat)
+    helpSync = SyncProjectHelp(wsCat)
 
     n = CollectTables(tbls)
     If n > 0 Then
@@ -69,13 +69,13 @@ Public Sub UpdateHelp()
         ReDim lblOk(1 To n)
         For i = 1 To n
             Set lo = tbls(i)
-            nm = lo.Name: key = LCase$(nm)
+            nm = lo.Name: keyName = LCase$(nm)
             qName = QueryOf(lo)
             desc = "": lblV = Empty: helpName = ""
-            If kept.Exists(key) Then
-                rec = kept(key)
+            If kept.Exists(keyName) Then
+                rec = kept(keyName)
                 desc = rec(0): lblV = rec(1): helpName = rec(2)
-                kept.Remove key
+                kept.Remove keyName
             End If
             If desc = "" Then
                 desc = DefaultDescription(nm, qName)
@@ -120,7 +120,7 @@ Public Sub UpdateHelp()
            "Таблиць з порушеннями: " & nIssues & IIf(nIssues > 0, " (колонка «Порушення»)", "") & vbCrLf & _
            IIf(inserted > 0, "Аркушів, де вставлено рядки над таблицями: " & inserted & vbCrLf, "") & _
            IIf(failed <> "", "Не вдалося вставити рядки на аркушах: " & failed & vbCrLf, "") & _
-           IIf(created, "Створено таблицю " & PROJECT_HELP & " зі стартовими правилами." & vbCrLf, "") & _
+           IIf(helpSync <> "", "Таблицю " & PROJECT_HELP & " " & helpSync & " за правилами з коду." & vbCrLf, "") & _
            "Стартових описів додано: " & filled & vbCrLf & _
            IIf(removed > 0, "Видалено з каталогу (таблиць більше немає): " & removed & vbCrLf, "") & vbCrLf & _
            "Аркуш «" & wsCat.Name & "», таблиця " & CAT_TABLE & "." & vbCrLf & _
@@ -260,12 +260,12 @@ Private Sub WriteCatalog(cat As ListObject, wsCat As Worksheet, data() As Varian
 End Sub
 
 ' Гіперпосилання в клітинці каталогу на таблицю tblName; якщо таблиці немає - лише текст
-Private Sub AddTableLink(wsCat As Worksheet, anchor As Range, tblName As String)
+Private Sub AddTableLink(wsCat As Worksheet, anchorCell As Range, tblName As String)
     Dim lo As ListObject, target As String
     Set lo = engFindTable(tblName)
     If lo Is Nothing Then Exit Sub
     target = "'" & Replace(lo.Parent.Name, "'", "''") & "'!" & lo.Range.Address
-    wsCat.Hyperlinks.Add anchor:=anchor, Address:="", SubAddress:=target, TextToDisplay:=tblName
+    wsCat.Hyperlinks.Add anchor:=anchorCell, Address:="", SubAddress:=target, TextToDisplay:=tblName
 End Sub
 
 Private Function CollectTables(ByRef tbls() As ListObject) As Long
@@ -307,9 +307,52 @@ Private Function EnsureHeaderRows(ByRef failed As String) As Long
 End Function
 
 ' ================== hlpProject: загальна довідка ==================
-Private Function EnsureProjectHelp(wsCat As Worksheet) As Boolean
+' Джерело правил - код (ProjectRules). Таблицю hlpProject створює, якщо її немає, і перезаписує,
+' якщо її вміст відрізняється від коду. Повертає "створено", "оновлено" або "" (без змін).
+Private Function SyncProjectHelp(wsCat As Worksheet) As String
     Dim rules As Collection, col As Long, lo As ListObject, i As Long, arr() As Variant, top As Range, r As Variant
-    If Not engFindTable(PROJECT_HELP) Is Nothing Then Exit Function
+    Dim n As Long, cur As Variant, same As Boolean, extra As Range, oldRng As Range
+
+    Set rules = ProjectRules()
+    n = rules.Count
+    ReDim arr(1 To n + 1, 1 To 3)
+    arr(1, 1) = "№": arr(1, 2) = "Розділ": arr(1, 3) = "Правило"
+    i = 1
+    For Each r In rules
+        i = i + 1
+        arr(i, 1) = i - 1: arr(i, 2) = r(0): arr(i, 3) = r(1)
+    Next r
+
+    Set lo = engFindTable(PROJECT_HELP)
+    If Not lo Is Nothing Then
+        ' порівняння з кодом
+        If lo.Range.Rows.Count = n + 1 And lo.Range.Columns.Count = 3 Then
+            cur = lo.Range.value
+            same = True
+            For i = 1 To n + 1
+                If CStr(cur(i, 1)) <> CStr(arr(i, 1)) Or CStr(cur(i, 2)) <> CStr(arr(i, 2)) Or _
+                   CStr(cur(i, 3)) <> CStr(arr(i, 3)) Then same = False: Exit For
+            Next i
+            If same Then Exit Function
+        End If
+        ' перезапис: місце під таблицею має бути вільним, якщо правил стало більше
+        If n + 1 > lo.Range.Rows.Count Then
+            Set extra = lo.Range.Cells(lo.Range.Rows.Count + 1, 1).Resize(n + 1 - lo.Range.Rows.Count, 3)
+            If Application.WorksheetFunction.CountA(extra) > 0 Then
+                Err.Raise vbObjectError + 516, , "Під таблицею " & PROJECT_HELP & " немає місця для нових правил (" & _
+                          extra.Address(False, False) & ")."
+            End If
+        End If
+        Set top = lo.Range.Cells(1, 1)
+        Set oldRng = lo.Range
+        If Not lo.DataBodyRange Is Nothing Then lo.DataBodyRange.ClearContents
+        lo.Resize top.Resize(n + 1, 3)
+        ClearOutside oldRng, lo.Range
+        top.Resize(n + 1, 3).value = arr
+        FormatProjectHelp lo
+        SyncProjectHelp = "оновлено"
+        Exit Function
+    End If
 
     ' перший вільний блок праворуч від усього на аркуші, через одну порожню колонку
     For Each lo In wsCat.ListObjects
@@ -322,26 +365,29 @@ Private Function EnsureProjectHelp(wsCat As Worksheet) As Boolean
     End With
     col = col + 2
 
-    Set rules = ProjectRules()
-    ReDim arr(1 To rules.Count + 1, 1 To 3)
-    arr(1, 1) = "№": arr(1, 2) = "Розділ": arr(1, 3) = "Правило"
-    i = 1
-    For Each r In rules
-        i = i + 1
-        arr(i, 1) = i - 1: arr(i, 2) = r(0): arr(i, 3) = r(1)
-    Next r
-
     Set top = wsCat.Cells(HEADER_ROW_MIN, col)
-    top.Resize(rules.Count + 1, 3).value = arr
-    Set lo = wsCat.ListObjects.Add(xlSrcRange, top.Resize(rules.Count + 1, 3), , xlYes)
+    top.Resize(n + 1, 3).value = arr
+    Set lo = wsCat.ListObjects.Add(xlSrcRange, top.Resize(n + 1, 3), , xlYes)
     lo.Name = PROJECT_HELP
+    FormatProjectHelp lo
+    SyncProjectHelp = "створено"
+End Function
+
+'' Очищає клітинки oldRng, які не входять у newRng (таблицю звузили або вкоротили)
+Private Sub ClearOutside(oldRng As Range, newRng As Range)
+    Dim c As Range
+    For Each c In oldRng.Cells
+        If Intersect(c, newRng) Is Nothing Then c.Clear
+    Next c
+End Sub
+
+Private Sub FormatProjectHelp(lo As ListObject)
     lo.ListColumns(1).Range.EntireColumn.ColumnWidth = 5
     lo.ListColumns(2).Range.EntireColumn.ColumnWidth = 16
     lo.ListColumns(3).Range.EntireColumn.ColumnWidth = 100
     lo.ListColumns(3).DataBodyRange.WrapText = True
     lo.DataBodyRange.VerticalAlignment = xlTop
-    EnsureProjectHelp = True
-End Function
+End Sub
 
 Private Sub AddRule(c As Collection, section As String, txt As String)
     c.Add Array(section, Sym(txt))
@@ -351,11 +397,11 @@ Private Function ProjectRules() As Collection
     Dim c As New Collection
     AddRule c, "Розміщення", "Шапка кожної таблиці - не вище рядка 3. Рядок над шапкою порожній; ще вище (рядок 1) - підпис таблиці, який ставить макрос UpdateHelp."
     AddRule c, "Розміщення", "Таблиці ростуть униз і вправо, тому кілька таблиць на одному аркуші ставлять лише поруч, ніколи одна під одною."
-    AddRule c, "Розміщення", "Таблиця з запиту Power Query (q_, pq_) - одна на аркуші. Аркуш бажано називати так само, як запит."
+    AddRule c, "Розміщення", "Таблиця з запиту Power Query (q_, pq_, test_) - одна на аркуші. Аркуш бажано називати так само, як запит. У тестовій книзі на аркуші «Тести» - лише test_All; test_Summary і test_Load - лише підключення."
     AddRule c, "Розміщення", "Кожна таблиця займає щонайменше 3 колонки (місце для підпису). Між сусідніми таблицями - щонайменше одна порожня колонка."
     AddRule c, "Розміщення", "Нижче і правіше таблиці нічого не розміщують: ні формул, ні приміток."
     AddRule c, "Назви", "Префікс задає роль таблиці: tbl - ручне введення і налаштування; q_ - дані призначення (результат запиту); pq_ - діагностика і звіти Engine; hlp - довідка; test_ - тести (лише тестова книга)."
-    AddRule c, "Назви", "Назви таблиць унікальні і завжди з префіксом. Довідка до tblX за замовчуванням - hlpX."
+    AddRule c, "Назви", "Назви таблиць унікальні і завжди з префіксом. Таблиця з запиту називається як запит (без tbl_). Довідка до tblX за замовчуванням - hlpX."
     AddRule c, "Довідка", "Аркуш HELP: tblTableCatalog, hlpProject (ця таблиця) і всі hlp-таблиці - поруч, шапки в рядку 3."
     AddRule c, "Довідка", "Призначення таблиці описують лише в tblTableCatalog[Призначення]. Правила заповнення колонок - у hlp-таблиці, вказаній у tblTableCatalog[Довідка]."
     AddRule c, "Каталог", "Колонки каталогу, які заповнюєте ви: Призначення; Підпис (TRUE - показувати підпис над таблицею, FALSE - ні); Довідка (назва hlp-таблиці). Решту заповнює UpdateHelp, ваші значення зберігаються між запусками."
@@ -364,6 +410,8 @@ Private Function ProjectRules() As Collection
     AddRule c, "Нова таблиця", "Нова таблиця з запиту: завантажити на новий аркуш {->} запустити UpdateHelp (додасть у каталог, зсуне шапку в рядок 3, поставить підпис) {->} заповнити «Призначення», за потреби створити hlp-таблицю і вписати її в «Довідку»."
     AddRule c, "Після змін", "Після вставлення рядків чи колонок перед таблицею, перейменування таблиці чи аркуша - запустити UpdateHelp. Інакше підпис покаже «{!} немає в каталозі»."
     AddRule c, "Службові", "Без підпису за замовчуванням: tblTableCatalog, hlpProject, tblRunLog, test_… і tblTest…."
+    AddRule c, "Git", "Репозиторій дзеркалить робочу книгу: ExportPowerQueriesToRepo запускають лише в ній (у тестовій книзі він зупиняється). Тестова конфігурація - tests\test_config.xlsx, тестові запити - tests\queries, фікстури - tests\fixtures."
+    AddRule c, "Довідка", "Ця таблиця (hlpProject) - копія правил з коду модуля modTableCatalog: UpdateHelp перезаписує її щоразу. Зміни правил - через погодження, код і документ архітектури, а не вручну."
     AddRule c, "Технічне", "Книга має бути збережена: формула назви в підписі використовує CELL(""filename""). Потрібен Excel 2021 або новіший (LET, XLOOKUP, IFS)."
     Set ProjectRules = c
 End Function
@@ -452,6 +500,10 @@ Private Function TableIssues(lo As ListObject, lbl As Boolean, helpName As Strin
 
     If Not HasKnownPrefix(lo.Name) Then AddIssue s, "назва без префікса (tbl, hlp, q_, pq_, test_)"
     If lo.Range.Row < HEADER_ROW_MIN Then AddIssue s, "шапка вище рядка " & HEADER_ROW_MIN
+    If IsQueryTable(lo) And LCase$(Left$(lo.Name, 3)) = "tbl" Then
+        AddIssue s, "таблиця запиту з префіксом tbl (tbl - ручні таблиці): назвіть як запит" & _
+                    IIf(QueryOf(lo) <> "", " (" & QueryOf(lo) & ")", "")
+    End If
 
     BlockCols lo, a1, a2
     For Each other In lo.Parent.ListObjects
@@ -494,11 +546,11 @@ End Function
 '   2. Посилання на клітинку «Призначення» в каталозі.
 '   3. Посилання на hlp-довідку з колонки «Довідка» або, для hlp-таблиці, назад до її таблиці.
 Private Sub WriteLabel(lo As ListObject, wsCat As Worksheet)
-    Dim rng As Range, t As String, tgt As String, nmRef As String, sh As String
+    Dim rng As Range, catT As String, tgt As String, nmRef As String, sh As String
     Dim info As String, warn As String, back As String
     Set rng = LabelRange(lo)
     If rng Is Nothing Then Exit Sub
-    t = CAT_TABLE
+    catT = CAT_TABLE
     tgt = lo.Range.Cells(1, 1).Address(False, False)
     nmRef = rng.Cells(1, 1).Address(False, False)
     sh = Replace(wsCat.Name, "'", "''")
@@ -507,19 +559,19 @@ Private Sub WriteLabel(lo As ListObject, wsCat As Worksheet)
     rng.Cells(1, 1).Formula2 = _
         "=LET(target," & tgt & ",file,CELL(""filename"",target)," & _
         "sheet,MID(file,FIND(""|"",SUBSTITUTE(file,""]"",""|"",LEN(file)-LEN(SUBSTITUTE(file,""]"",""""))))+1,255)," & _
-        "addr,ADDRESS(ROW(target),COLUMN(target),4),ranges," & t & "[Діапазон]," & _
+        "addr,ADDRESS(ROW(target),COLUMN(target),4),ranges," & catT & "[Діапазон]," & _
         "firstCell,LEFT(ranges,FIND("":"",ranges&"":"")-1)," & _
-        "XLOOKUP(1,(" & t & "[Аркуш]=sheet)*(firstCell=addr)," & t & "[Таблиця],""""))"
+        "XLOOKUP(1,(" & catT & "[Аркуш]=sheet)*(firstCell=addr)," & catT & "[Таблиця],""""))"
 
     rng.Cells(1, 2).Formula2 = _
-        "=LET(key," & nmRef & ",hit,XLOOKUP(key," & t & "[Таблиця]," & t & "[Призначення],"""")," & _
+        "=LET(key," & nmRef & ",hit,XLOOKUP(key," & catT & "[Таблиця]," & catT & "[Призначення],"""")," & _
         "IF(OR(key="""",hit=""""),IF(key="""",""" & warn & " немає в каталозі"",""" & info & " Призначення (не заповнено)"")," & _
         "HYPERLINK(""#'" & sh & "'!""&ADDRESS(ROW(hit),COLUMN(hit),4),""" & info & " Призначення"")))"
 
     rng.Cells(1, 3).Formula2 = _
         "=LET(tn," & nmRef & "," & _
-        "hlp,XLOOKUP(tn," & t & "[Таблиця]," & t & "[Довідка],"""")," & _
-        "owner,XLOOKUP(tn," & t & "[Довідка]," & t & "[Таблиця],"""")," & _
+        "hlp,XLOOKUP(tn," & catT & "[Таблиця]," & catT & "[Довідка],"""")," & _
+        "owner,XLOOKUP(tn," & catT & "[Довідка]," & catT & "[Таблиця],"""")," & _
         "IFS(tn="""",""""," & _
         "hlp<>"""",IFERROR(IF(ISREF(INDIRECT(hlp)),HYPERLINK(""#""&hlp,""? Як заповнювати""),""" & warn & " ""&hlp&"" не знайдено""),""" & warn & " ""&hlp&"" не знайдено"")," & _
         "owner<>"""",HYPERLINK(""#""&owner,""" & back & " до ""&owner)," & _

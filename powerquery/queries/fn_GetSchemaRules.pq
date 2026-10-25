@@ -16,6 +16,8 @@ let
     TrName = (n as text) as nullable text =>
         List.First(List.Select(Record.FieldNames(cfgTransforms),
             (f) => Text.Lower(f) = Text.Lower(n)), null),
+    // Гілка error нижче недосяжна: невідомі назви відсіюються заздалегідь (BadTr, помилка
+    // НевідомеПеретворення до компіляції). Лишено як захист на випадок зміни порядку перевірок.
     Tr = (n as text) as record =>
         if TrName(n) <> null then Record.Field(cfgTransforms, TrName(n))
         else error Error.Record("НевідомеПеретворення",

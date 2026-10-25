@@ -1,6 +1,6 @@
 # Power Query Engine: етапи, склад і застереження
 
-Стан на 24.10.2026 (v4.10: етапи A–D плану стійкості, оптимізація звіту якості, виправлення за двома аудитами коду; test\_All — 11 наборів PASS). Основні потоки перевірено на реальних даних (CSV до 199 тис. рядків, Excel), непідтверджені пункти позначено в розділах 4, 7 і 8. Код надавався без запуску з боку автора відповідей, тому статуси відображають лише ваші повідомлення в розмові.
+Стан на 25.10.2026 (v4.11: етапи A–D плану стійкості, оптимізація звіту якості, виправлення за трьома аудитами коду, довідка в книзі (HELP), Git-репозиторій; test\_All — 11 наборів PASS). Файл у репозиторії — docs/architecture.md (без версії в назві: історію зберігає Git). Основні потоки перевірено на реальних даних (CSV до 199 тис. рядків, Excel), непідтверджені пункти позначено в розділах 4, 7 і 8. Код надавався без запуску з боку автора відповідей, тому статуси відображають лише ваші повідомлення в розмові.
 
 ## 1. Мета і концепція
 
@@ -102,7 +102,7 @@ Engine це єдине модульне ядро в Power Query (M) для чи�
 | fn\_ApplyRulesEx | функція | 2b | Конвеєр нормалізації без політик, з відсіканням службових рядків першим кроком; повертає Data, Dropped, RulesSkipped | fn\_ApplyRowFilters, cfgSettings | Підтв. |
 | fn\_ApplyRules | функція | 2b | Обгортка fn\_ApplyRulesEx, що повертає лише дані | fn\_ApplyRulesEx | Підтв. |
 | fn\_ToRate | функція | 2b | Розбір порогу ErrorThreshold у частку 0..1 або null | cfgSettings | Підтв. (test\_ToRate) |
-| fn\_EffectiveSettings | функція | 2b | Ефективні Policy, Threshold, Culture джерела: реєстр → options → cfgSettings | fn\_Opt, fn\_ToRate, cfgSettings | Підтв. (тести) |
+| fn\_EffectiveSettings | функція | 2b | Ефективні Policy, Threshold, Culture джерела: реєстр → cfgSettings (options не враховуються з v4.10) | fn\_Opt, fn\_ToRate, cfgSettings | Підтв. (тести) |
 | fn\_LoadVerdict | функція | 2b | Єдине правило «чи зупиниться завантаження» (Stop, Reason, Flag) для fn\_EnforceSchema і QualityFlag | — | Підтв. (test\_LoadVerdict) |
 | fn\_EnforceSchema | функція | 2b | Перевірка обов'язкових колонок, політики Strict, Report, Lenient і порогу; третій параметр — запис налаштувань fn\_EffectiveSettings | fn\_ApplyRules, fn\_EffectiveSettings, fn\_LoadVerdict | Підтв. (Strict, Report, Lenient, поріг) |
 | fn\_SchemaReport | функція | 2c | Звіт відповідності схемі, зокрема RowsDropped, FilterRulesSkipped і DuplicateHeaders | fn\_ApplyRulesEx | Підтв. |
@@ -118,7 +118,7 @@ Engine це єдине модульне ядро в Power Query (M) для чи�
 | fn\_LoadConfig | функція | 1 | Конфігурація з книги одним записом: Registry, Schema, RowFilters, RowFiltersRaw; імена таблиць з cfgSettings[Tables] | cfgSettings, fn\_NormalizeSchema, fn\_NormalizeRowFilters | Підтв. |
 | fn\_ReadPurpose | функція | 3 | Читання й об'єднання файлів призначення: fn\_ReadPurpose(config, targetType, options); блокуючі проблеми реєстру з fn\_RegistryIssues | fn\_ActiveSources, fn\_RegistryIssues, fn\_ReadSource, fn\_GetSchemaRules, fn\_EnforceSchema, fn\_EffectiveSettings | Підтв. |
 | q\_Registry | запит | 3 | Запит призначення Registry (зразок для інших q\_…): fn\_ReadPurpose(fn\_LoadConfig(), "Registry") | fn\_LoadConfig, fn\_ReadPurpose | Підтв. |
-| test\_RowFilters, test\_RowFiltersReal, test\_ToRate, test\_Canon, test\_LoadVerdict, test\_RegistryIssues, test\_Extensions | запити | тести | Модульні тести: фільтри, розбір порогу, правило регістру, правило зупинки, перевірки реєстру, розширення файлів (вміст CSV задано текстом, файлів не відкриває) | fn\_ApplyRowFilters, fn\_ToRate, fn\_Canon, fn\_LoadVerdict, fn\_RegistryIssues, fn\_ParseSource, fn\_ParseHeaders | Підтв. |
+| test\_RowFilters, test\_ToRate, test\_Canon, test\_LoadVerdict, test\_RegistryIssues, test\_Extensions | запити | тести | Модульні тести: фільтри, розбір порогу, правило регістру, правило зупинки, перевірки реєстру, розширення файлів (вміст CSV задано текстом, файлів не відкриває) | fn\_ApplyRowFilters, fn\_ToRate, fn\_Canon, fn\_LoadVerdict, fn\_RegistryIssues, fn\_ParseSource, fn\_ParseHeaders | Підтв. |
 | test\_Summary, test\_Load, test\_All | запити | тести | Регресійні тести (етап C): зведення проти tblTestExpected (з v4.9 лише для SourceID з tblTestExpected, сам читає книгу; src\_TestExpected видалено), завантаження проти tblTestLoad, підсумок | fn\_LoadConfig, fn\_QcReports, fn\_SummaryTable, fn\_ReadPurpose | Підтв. |
 | cfgQueryGroups | запис | 1 | Структура тек Power Query (розділ 5.1): Groups, Prefixes; читає макрос експорту | — | Очікує |
 
@@ -136,7 +136,7 @@ Engine це єдине модульне ядро в Power Query (M) для чи�
 
 | Вид запиту | Приклади | Робота з книгою |
 | --- | --- | --- |
-| Відкривають файли | pq\_GenerateSchemaTemplate, qc\_Reports, запити виклику fn\_ReadPurpose (q\_…), test\_RowFiltersReal | Читають таблиці книги напряму, викликають лише функції (fn\_, cfg), на запити src\_ і pq\_ не посилаються. Схему беруть через fn\_NormalizeSchema, фільтри через fn\_NormalizeRowFilters |
+| Відкривають файли | pq\_GenerateSchemaTemplate, qc\_Reports, запити виклику fn\_ReadPurpose (q\_…) | Читають таблиці книги напряму, викликають лише функції (fn\_, cfg), на запити src\_ і pq\_ не посилаються. Схему беруть через fn\_NormalizeSchema, фільтри через fn\_NormalizeRowFilters |
 | Збирають результати інших запитів | pq\_ExtractedColumns, pq\_SchemaIssues, pq\_SchemaDrift, pq\_Quality\* | Самі книгу й файли не читають, схему беруть із src\_SchemaRegistry |
 | Лише перевіряють таблиці книги | pq\_RegistryCheck, pq\_SchemaCheck, pq\_RowFiltersCheck | Файлів не відкривають, тому допустимі обидва способи |
 
@@ -164,7 +164,7 @@ Engine це єдине модульне ядро в Power Query (M) для чи�
 - Дотримуйтеся правила трьох видів запитів (розділ 5). Запити, що відкривають файли, не повинні посилатися на запити src\_ чи pq\_: так було з qc\_Reports до переходу на fn\_NormalizeSchema.
 - src\_SchemaRegistry має лишатися запитом «Лише підключення».
 - Запити, що відкривають файли, отримують конфігурацію через fn\_LoadConfig(): функція вбудовується в запит-викликач, тож читання книги лишається в ньому (як у fn\_TemplateColumns). Перевірено на q\_Registry, qc\_Reports, test\_Load, pq\_GenerateSchemaTemplate.
-- Виняток: якщо таблицю, отриману через fn\_LoadConfig, передати всередину власної функції запиту, що відкриває файли, Power Query дає Formula.Firewall (test\_RowFiltersReal, 16.10.2026). Тоді таблиці читаються в самому запиті: `Excel.CurrentWorkbook(){[Name = cfgSettings[Tables][Registry]]}[Content]`; імена таблиць лишаються в cfgSettings[Tables].
+- Виняток: якщо таблицю, отриману через fn\_LoadConfig, передати всередину власної функції запиту, що відкриває файли, Power Query дає Formula.Firewall (виявлено на test\_RowFiltersReal 16.10.2026; запит видалено у v4.10). Тоді таблиці читаються в самому запиті: `Excel.CurrentWorkbook(){[Name = cfgSettings[Tables][Registry]]}[Content]`; імена таблиць лишаються в cfgSettings[Tables].
 - Якщо помилка з'явиться знову: Table.Buffer або List.Buffer значень з книги перед доступом до файлів, або налаштування конфіденційності для довірених локальних джерел.
 
 ### 6.2. Реєстр джерел
@@ -174,7 +174,7 @@ Engine це єдине модульне ядро в Power Query (M) для чи�
 - Пара PeriodType + PeriodNumber має бути унікальною серед активних джерел призначення (ДублюванняПеріоду, параметр AllowDuplicatePeriods).
 - Той самий файл і лист не можуть бути в кількох активних джерелах одного призначення (ДублюванняФайлу, параметр AllowDuplicateFiles); різні листи одного файла дозволені. Перевірка не залежить від IsRequired. pq\_RegistryCheck показує дубль лише для активних рядків.
 - Порожні Enabled та IsRequired означають TRUE. Значення з TrueValues (TRUE, Так, 1, +) розпізнаються.
-- ErrorPolicy і ErrorThreshold у рядку реєстру мають пріоритет над options виклику fn\_ReadPurpose, а ті над cfgSettings. Зведення якості (qc\_Reports) бачить лише реєстр і cfgSettings, тому політику для перевірок задавайте в реєстрі. Правила заповнення ErrorThreshold див. у 6.7.
+- ErrorPolicy і ErrorThreshold беруться з рядка реєстру, а якщо клітинка порожня — з cfgSettings. options виклику fn\_ReadPurpose їх не змінюють (з v4.10, розділ 6.13): завантаження і зведення якості мають однакові налаштування. Правила заповнення ErrorThreshold див. у 6.7.
 - Якщо заповнено FullPath, він має пріоритет над Path і FileName.
 - Вимкнене джерело (Enabled = FALSE) однаково зникає з даних, звітів і перевірок реєстру (fn\_ActiveSources).
 
@@ -210,7 +210,7 @@ Engine це єдине модульне ядро в Power Query (M) для чи�
 
 - Порядок етапів фіксований: відсікання службових рядків за tblRowFilters (на колонках джерела, до вибору колонок схеми) → канонічна форма (усі колонки схеми в порядку схеми, відсутні необов'язкові колонки = null) → видалення порожніх рядків → до-типові дії (TrimFlag = Trim + Clean, потім текстові CustomTransform) → перейменування → типи (культура з cfgSettings) → після-типові дії. Кроки PostSteps мають тип третім елементом.
 - Колонки з Use = Ні виключено з усіх правил. Обов'язковість колонок перевіряється лише для реальних даних; коли джерела немає, повертається порожня таблиця тієї ж форми й з тими ж типами.
-- Політики: Strict зупиняє запит із помилкою \[ПомилкиТипізації\] та числом рядків і колонок (повідомлення збирається з буфера лише рядків з помилками), Report лишає помилки в клітинках, Lenient замінює їх на null (Table.ReplaceErrorValues; до v4.6 ця гілка не працювала, ваду знайшов тест L06). Політика задається в cfgSettings, в options виклику fn\_ReadPurpose або в колонці ErrorPolicy реєстру.
+- Політики: Strict зупиняє запит із помилкою \[ПомилкиТипізації\] та числом рядків і колонок (повідомлення збирається з буфера лише рядків з помилками), Report лишає помилки в клітинках, Lenient замінює їх на null (Table.ReplaceErrorValues; до v4.6 ця гілка не працювала, ваду знайшов тест L06). Політика задається в колонці ErrorPolicy реєстру, а якщо вона порожня — у cfgSettings (options не враховуються).
 - Поріг ErrorThreshold діє лише для Report і Lenient: якщо частка рядків з хоча б однією помилкою типізації перевищує поріг, запит зупиняється помилкою \[ПеревищенийПоріг\] з кількістю рядків, часткою і порогом. У Strict поріг не перевіряється, бо зупиняє будь-яка помилка. Підрахунок частки робить ще один прохід по даних, але лише коли поріг заданий.
 - У режимі Report на аркуші клітинки з помилками виглядають порожніми, тому відрізнити їх від null можна лише за звітами (pq\_QualityErrors). Звіти не залежать від політики.
 - RowNo у звіті нумерує рядки даних після видалення порожніх рядків (з 1, без шапки), тож може відрізнятися від рядка у файлі.
@@ -225,12 +225,12 @@ Engine це єдине модульне ядро в Power Query (M) для чи�
 - Кілька варіантів у Value розділяються символом `|`: `Всього|Разом`, `х|x` (кирилична й латинська літера). Для IsBlank і NotNumeric Value не потрібне.
 - NotNumeric приховує й справжні помилки даних, тому використовуйте його лише для колонок, де нечислові рядки точно службові.
 - Правило діє на колонках джерела до вибору колонок схеми, тому може посилатися й на колонку, якої немає в схемі. Якщо колонки немає у файлі, правило пропускається без помилки, а FilterRulesSkipped у зведенні це показує.
-- Use розбирається як fn\_ToBool: порожнє або значення з cfgSettings[TrueValues] вмикає правило, будь-яке інше (FALSE, Ні, 0) вимикає. Однаково в конвеєрі й у test\_RowFiltersReal.
+- Use розбирається як fn\_ToBool: порожнє або значення з cfgSettings[TrueValues] вмикає правило, будь-яке інше (FALSE, Ні, 0) вимикає. Однаково в конвеєрі й у pq\_RowFiltersCheck.
 - Кількість відсічених рядків видно в RowsDropped у pq\_QualitySummary. EmptyRowsRemoved тепер рахує лише повністю порожні рядки.
-- Перед зміною правил варто запустити test\_RowFiltersReal: він показує, які значення відсікаються (DroppedValues, DroppedSample) і які нечислові значення лишаються (KeptNonNumeric).
-- Без 5-го параметра rowFilters fn\_ReadPurpose службові рядки не відсікає.
+- Перед зміною правил перевірте pq\_RowFiltersCheck, а після — RowsDropped у pq\_QualitySummary. Поведінку фільтрів закріплює test\_RowFilters (13 випадків). Діагностичний test\_RowFiltersReal видалено у v4.10.
+- Правила відсікання fn\_ReadPurpose бере з config (fn\_LoadConfig → tblRowFilters); окремого параметра немає.
 
-**ErrorThreshold (fn\_ToRate).** Задається в cfgSettings (мовою M: `0.05` або `"5%"`), в options виклику fn\_ReadPurpose або в колонці ErrorThreshold реєстру.
+**ErrorThreshold (fn\_ToRate).** Задається в колонці ErrorThreshold реєстру, а якщо вона порожня — у cfgSettings (мовою M: `0.05` або `"5%"`). options не враховуються. Поріг діє лише для політик Report і Lenient: завантаження зупиняється, коли частка рядків з помилками перевищує поріг (частка, що дорівнює порогу, проходить).
 
 | Значення в клітинці | Результат |
 | --- | --- |
@@ -238,7 +238,7 @@ Engine це єдине модульне ядро в Power Query (M) для чи�
 | число 0,05 | 5% |
 | текст `5%`, `0,05`, `0.05`, `12,5 %` | 5%, 5%, 5%, 12,5% |
 | `1` або `100%` | 100% (поріг ніколи не спрацює) |
-| порожньо | значення з options або cfgSettings; якщо там null, поріг вимкнено |
+| порожньо | значення з cfgSettings; якщо там null, поріг вимкнено |
 | `off`, `ні`, `no`, `-`, `false`, FALSE | поріг вимкнено для джерела, навіть якщо в cfgSettings він заданий |
 | `5`, `"5"`, `50`, 5000% (=50), від'ємне, понад 100%, `abc`, TRUE | помилка НекоректнийПоріг, рядок у pq\_RegistryCheck, QualityFlag = BAD\_THRESHOLD |
 
@@ -263,12 +263,12 @@ ErrorRate = ErrorRows / Rows (рядки після відсікання слу�
 | --- | --- |
 | modEngineCommon (з v4.8) | Спільні процедури eng\*: параметри з cfgSettings (engLoadSettings, engSetting, engTableName, engIsExtension, engToBool), таблиці (engFindTable, engCell, engCellOpt, engSourcePath), запити (engQueryNameOf за Location=, engFindQueryTable, engLoadQueryToSheet, engRefreshAllSync), текст M (engStripMComments, engMIdentifiers), файли (engFileExists, engSafeFileName, engEnsureFolder, engReadUtf8, engWriteUtf8) |
 | modSelectSourceFiles, SelectSourceFiles | Вибір файлів для рядків tblSourceRegistry, перевірка структури CSV, запис FullPath, оновлення і підсумок QualityFlag |
-| modRunLog, RefreshWithRunLog (з v4.8) | «Оновити все» з вимірюванням часу і записом журналу запусків у tblRunLog |
+| modRunLog, RefreshWithRunLog (з v4.8) | «Оновити все» з вимірюванням часу і записом журналу запусків у tblRunLog (шапка в рядку 3). З v4.11 — обробник помилок: збій посеред циклу відновлює ScreenUpdating, курсор і рядок стану |
 | modExportPowerQueryCodesToRepo, ExportPowerQueriesToRepo | Експорт для Git: код запитів (.pq), queries.yml (тип, таблиця завантаження, залежності), таблиці конфігурації в CSV |
 | modPOWERQUERYPROFILER, ProfilePowerQueries | Час оновлення кожного підключення (аркуші PQ\_Profiler і PQ\_ProfilerSummary) |
-| modCleanExportSelectedSheets, CleanExportSelectedSheets | Експорт виділених аркушів у окремі книги без запитів і підключень; таблиці запитів від'єднуються від QueryTable |
-| modImportPowerQueryFromFolder, ImportPQQueriesFromFolder | Імпорт або оновлення запитів з теки .pq (ім'я файла = ім'я запиту) |
-| modSetupTestEngine, SetupTestEngine | Підготовка тестової книги з пакета (розділ 6.11) |
+| modCleanExportSelectedSheets, CleanExportSelectedSheets | Експорт виділених аркушів у окремі книги без запитів і підключень; таблиці запитів від'єднуються від QueryTable. З v4.11: зовнішні зв'язки з книгою-джерелом розриваються (BreakLink, формули стають значеннями); якщо стається помилка, незбережена копія закривається |
+| modImportPowerQueryFromFolder, ImportPQQueriesFromFolder | Імпорт або оновлення запитів з теки .pq (ім'я файла = ім'я запиту) у книгу з модулем (ThisWorkbook). З v4.11: якщо у вибраній теці немає .pq, шукає в powerquery\queries, engine\powerquery, for\_workbook\powerquery; обробник помилок |
+| modSetupTestEngine, SetupTestEngine | Підготовка тестової книги з пакета або з клону репозиторію (розділ 6.11) |
 | modTableCatalog, UpdateHelp (з v4.11) | Каталог таблиць tblTableCatalog і загальна довідка hlpProject на аркуші HELP, підписи над таблицями, перевірка правил розміщення (розділ 6.14) |
 
 modExport (ExportSheetToCleanWorkbook) і старий модуль вибору файлів (MainModuleBas, ConfigTable) замінено й можна видалити. Модулі .bas зберігаються в кодуванні Windows-1251 (CRLF) для імпорту в редакторі VBA.
@@ -340,11 +340,14 @@ modExport (ExportSheetToCleanWorkbook) і старий модуль вибору
 - З v4.7–v4.8 додано test\_RegistryIssues (9) і test\_Extensions (7): test\_All підсумовує 8 наборів.
 - Для журналу запусків і профайлера в тестовій книзі з'являються аркуші «Якість» (pq\_QualitySummary), RunLog, PQ\_Profiler, PQ\_ProfilerSummary; на тести вони не впливають.
 - Очікування C13 (UTF-8 без BOM при CsvEncoding = 1251 дає спотворені заголовки) фіксує поточну поведінку, а не бажану.
+- З v4.11 SetupTestEngine розпізнає дві структури: пакет (test\_engine\test\_config.xlsx, test\_engine\fixtures, engine\powerquery) і клон репозиторію (tests\test\_config.xlsx, tests\fixtures, powerquery\queries + tests\queries). Якщо не знайдено жодного .pq або після імпорту немає test\_All, він зупиняється з помилкою (раніше звіт «додано 0, оновлено 0» лишав книгу на старому коді).
+- З v4.11 на аркуш «Тести» завантажується лише test\_All (шапка в A3, таблиця test\_All); test\_Summary і test\_Load — лише підключення (таблиці попередніх версій SetupTestEngine прибирає). Тести обчислюються один раз за «Оновити все» (закриває п. 18 розділу 8). Деталі FAIL — тимчасово завантажити test\_Summary чи test\_Load на окремий аркуш.
+- tests\gen\_fixtures.py: аркуш «Інструкція» test\_config.xlsx бере текст із README.md поруч зі скриптом (репозиторій) або README\_stageC.md (пакет); якщо жодного немає, аркуш має один рядок-посилання (раніше скрипт падав без README\_stageC.md).
 
 ### 6.12. Продуктивність: повторне читання файлів
 
 - У M таблиця, на яку запит посилається кілька разів (фільтр, з'єднання, ToRecords, SelectRows у циклі), не кешується, а обчислюється заново при кожному перегляді. Якщо вона відкриває файли, кожен перегляд знову читає всі файли-джерела, а вкладені повтори множаться.
-- Правило: у запиті, що збирає результати, вхідну таблицю, яку переглядають більше одного разу, обгортати Table.Buffer одразу при отриманні (pq\_ExtractedColumns, pq\_SchemaDrift, test\_Summary з v4.8). Table.Buffer не застосовувати до таблиць із клітинками-помилками, які мають лишитися помилками в окремих клітинках; там рахувати за один перегляд (test\_Load: помилки рахуються одним Table.AddColumn, а не SelectRowsWithErrors на кожну колонку).
+- Правило: у запиті, що збирає результати, вхідну таблицю, яку переглядають більше одного разу, обгортати Table.Buffer одразу при отриманні (pq\_ExtractedColumns, pq\_SchemaDrift, test\_Summary з v4.8). Table.Buffer зберігає клітинки-помилки як помилки (перевірено діагностикою BufferOk, розділ 6.12), тому буфер допустимий і для таких таблиць (fn\_EnforceSchema, test\_Load). Рахувати помилки краще за один перегляд (test\_Load: одним Table.AddColumn, а не SelectRowsWithErrors на кожну колонку).
 - Ефект у тестовій книзі (17.10.2026): pq\_SchemaDrift читав 10–12 МБ при ~100 КБ тестових файлів (~100 повних проходів), після виправлення оновлення в редакторі майже миттєве; «Оновити все» з журналом — 34–39 с замість 502 с.
 - Синхронне оновлення (макроси) робить довгі оновлення помітними; фонове «Оновити все» в Excel їх приховувало.
 - Тести не повинні залежати від реальних джерел у реєстрі тестової книги: test\_Summary будує звіти лише для SourceID з tblTestExpected (v4.9, патч G). До цього 200 МБ реальних CSV у тестовій книзі давали 11–12 хв «Оновити все» (3–4 повні читання).
@@ -377,7 +380,7 @@ modExport (ExportSheetToCleanWorkbook) і старий модуль вибору
 
 ### 6.14. Структура книги і довідка (v4.11, обов'язкові правила)
 
-Погоджено 24.10.2026. Ті самі правила макрос записує в таблицю hlpProject на аркуші HELP (якщо її ще немає).
+Погоджено 24.10.2026. Джерело правил — код modTableCatalog (ProjectRules); UpdateHelp створює таблицю hlpProject на аркуші HELP і перезаписує її щоразу, коли вміст відрізняється від коду (з v4.11, рішення за аудитом 25.10.2026). Зміни правил — через погодження, код і цей документ, а не вручну в книзі.
 
 **Розміщення**
 1. Шапка кожної таблиці — не вище рядка 3. Рядок 2 порожній, рядок 1 — підпис таблиці (ставить UpdateHelp).
@@ -398,11 +401,24 @@ modExport (ExportSheetToCleanWorkbook) і старий модуль вибору
 - «? Як заповнювати» — IFS: HYPERLINK("#"&hlp) з колонки «Довідка», якщо таблиця існує (ISREF(INDIRECT(...))), інакше «⚠ … не знайдено»; для hlp-таблиці — «← до tblX».
 Книга має бути збережена. Клітинки підпису позначаються прихованими іменами engLbl\_<таблиця>; наступний запуск їх очищає і пише заново. Вручну підписи не редагують.
 
+**Назви таблиць запитів (з v4.11).** Таблиця, завантажена з запиту, називається як запит (q\_…, pq\_…, test\_…): engLoadQueryToSheet і SetupTestEngine більше не додають «tbl\_». UpdateHelp показує порушення «таблиця запиту з префіксом tbl» (зокрема tblSchemaColumns, tbl\_test\_All попередніх версій). Перейменування таблиці Excel поширює на структуровані посилання й іменовані формули.
+
+**Тестова книга.** На аркуші «Тести» — лише test\_All; test\_Summary і test\_Load — лише підключення. Виняток із правила «таблиця запиту одна на аркуші» не потрібен.
+
 **Службові таблиці** (Підпис = FALSE за замовчуванням): tblTableCatalog (у каталог не входить), hlpProject, tblRunLog, test\_…, tblTest….
 
 **Нова таблиця з запиту:** завантажити на новий аркуш → UpdateHelp (додасть у каталог, вставить рядки, щоб шапка була в рядку 3, поставить підпис; «Призначення» отримає стартовий опис) → заповнити «Призначення», за потреби створити hlpX і вписати в «Довідку». Після вставлення рядків чи колонок перед таблицею, перейменування таблиці чи аркуша — знову UpdateHelp, інакше підпис покаже «⚠ немає в каталозі». Запити лише в моделі даних (без таблиці на аркуші) у каталог не потрапляють.
 
 **Що макрос змінює сам:** створює аркуш HELP і каталог, якщо їх немає; вставляє рядки зверху аркуша, де шапка якоїсь таблиці вище рядка 3; приводить каталог до 14 колонок у стандартному порядку (якщо праворуч немає місця — зупиняється з повідомленням); створює hlpProject праворуч від усього на HELP. Чужі таблиці не пересуває.
+
+### 6.15. Git-репозиторій (v4.11)
+
+- Репозиторій f4743889-rgb/PQ\_Engine. Структура: powerquery\ (експорт макросом: queries, metadata\queries.yml, tables, vba, README.md), tests\ (fixtures, test\_config.xlsx, queries\test\_\*.pq, gen\_fixtures.py, README.md), docs\ (architecture.md, зовнішній аудит), .gitattributes, .gitignore, README.md.
+- **Теку powerquery\ дзеркалить лише робоча книга** (рішення 25.10.2026 за аудитом: експорт тестової книги замінив у репозиторії робочі реєстр, схему і фільтри тестовими). Робоча книга лежить у корені клону; тестова — поза репозиторієм. ExportPowerQueriesToRepo у книзі з tblTestExpected зупиняється з поясненням. Тестова конфігурація — у tests\test\_config.xlsx, тестові запити — у tests\queries (копіюються з пакета вручну разом зі змінами тестів).
+- .gitignore: \*.xlsm і \*.xlsb у будь-якій теці; \*.xlsx лише в корені (фікстури .xlsx у tests\ потрібні).
+- .gitattributes: .bas/.cls/.frm у Git в UTF-8, на диску в cp1251 і CRLF (working-tree-encoding, Git 2.18+); модулі не завантажувати через вебінтерфейс GitHub. CSV, yml, json і фікстури — байт у байт.
+- queries.yml і README з v4.11 містять опис запиту (властивість Description, підказка в редакторі Power Query).
+- **Регістр ідентифікаторів VBA.** Редактор VBA вирівнює регістр однойменних ідентифікаторів у всьому проєкті, тож параметр value перетворював .Value на .value в усіх модулях, і кожен імпорт давав у Git десятки «змінених» рядків. У v4.11 такі параметри й змінні перейменовано (value → txtValue, path → filePath, formula → mText, charset → csName, title → dlgTitle, header → hdrLine, key → keyName, names → colNames, anchor → anchorCell, T → catT, BaseName → FileBaseName). Правило для нового коду: не називати змінні й параметри так само, як властивості, методи чи іменовані аргументи Excel і VBA (Value, Name, Path, Formula, Text, Key тощо). Перевірка: у пакеті кожен ідентифікатор має одне написання в усіх модулях.
 
 ## 7. Результати перевірки
 
@@ -428,7 +444,7 @@ modExport (ExportSheetToCleanWorkbook) і старий модуль вибору
 | Report: ті самі дані | Усе завантажено, помилки лишаються в клітинках (на аркуші порожні), звіти показують 17 826 помилок |
 | Lenient | До v4.6 не працював: помилки лишалися в клітинках (тест L06, ErrorCells = 2). Після виправлення ErrorCells = 0 |
 | tblRowFilters: test\_RowFilters (вбудовані дані) | Dropped = 3, RulesApplied = 2, RulesSkipped = 1, OK = TRUE |
-| tblRowFilters: реальний файл Registry (test\_RowFiltersReal) | 440 рядків, відсічено 22 («Всього», «Разом» у № з/п, «х» у Ціна, грн.), RulesSkipped = 0, KeptNonNumeric порожній |
+| tblRowFilters: реальний файл Registry (test\_RowFiltersReal; запит видалено у v4.10) | 440 рядків, відсічено 22 («Всього», «Разом» у № з/п, «х» у Ціна, грн.), RulesSkipped = 0, KeptNonNumeric порожній |
 | tblRowFilters у конвеєрі | pq\_RowFiltersCheck порожній; Registry1: RowsDropped = 22, FilterRulesSkipped = 0, ErrorRows = 0; q\_Registry без службових рядків і помилок; інші призначення без змін |
 | Обидва правила вимкнено, Strict | Зупинка ПомилкиТипізації (22 рядки, колонки № з/п, Ціна); зведення: ERROR, ErrorRate 5%, QualityFlag = FAIL |
 | Обидва правила вимкнено, Report, поріг 1% | q\_Registry зупиняється ПеревищенийПоріг; QualityFlag = FAIL |
@@ -458,6 +474,7 @@ modExport (ExportSheetToCleanWorkbook) і старий модуль вибору
 | Патч G1: без другого оновлення зведення | RefreshWithRunLog 367,8 с після холодного запуску; FAIL лише в очікуваних тестових сценаріях |
 | Патч H: буфер сирих даних | pq\_QualitySummary 336 с замість 217 с — відкочено |
 | Патч H2: вужчий буфер перед фільтрами | pq\_QualitySummary 202,8 с (−7%) — залишено |
+| Git: репозиторій f4743889-rgb/PQ\_Engine (25.10.2026, v4.11) | Тестова книга в корені клону (D:\GitHub\PQ\_Engine, у .gitignore); UpdateHelp виконано, test\_All PASS; ExportPowerQueriesToRepo: 65 запитів, 22 таблиці, 9 модулів VBA, README без попереджень; коміти «структура» і «експорт» відправлено; на GitHub README і .bas (UTF-8 через .gitattributes) відображаються правильно |
 | Профайлер робочої книги без тестів (24.10.2026, Run 1) | pq\_QualitySummary 28,4 с (усі 8 реальних джерел, ~200 МБ), q\_GO 21,6 с, pq\_ExtractedColumns 2,5 с, Calendar 1,9 с; разом ~55 с |
 | q\_GO = fn\_ReadPurpose(fn\_LoadConfig(), "GO") на аркуш (24.10.2026, v4.10) | 3 файли (GO1–GO3, ~170 МБ, ~200 тис. рядків), 3 796 542 клітинки — ~20 с разом з автопідбором ширини колонок |
 | Патч N (аудит коду): 1.1–1.8, єдине джерело | test\_All 11 наборів; test\_AuditFixes виявив, що виправлення 1.2 у N не працювало (помилка клітинки виникала до try) |
@@ -497,7 +514,7 @@ modExport (ExportSheetToCleanWorkbook) і старий модуль вибору
 15. Перевірка структури Excel-файлів у SelectSourceFiles (TableSheetName, заголовки) до оновлення; зараз її робить лише Engine.
 16. Аудит дублювань (duplication\_audit\_v4.4.md): D1, D3, D9 закрито у v4.5; D4–D7 закрито у v4.6; D2 і D10 закрито у v4.7; D13, D8 (розширення файлів) і помилки профайлера закрито у v4.8. Відкриті: D8 для операторів фільтрів, політик, типів і дій CustomTransform (перевірка таблиць Data Validation проти M), D11, D14.
 17. Перевірити на реальних даних робочої книги зміни v4.6–v4.8 (патчі D, E, F–F3), зокрема тривалість «Оновити все» і pq\_SchemaDrift після буферизації.
-18. test\_All заново обчислює test\_Summary і test\_Load, які також завантажені на аркуш, тож у тестовій книзі тести виконуються двічі за «Оновити все». Прийнятно (≈30 с); за потреби test\_All можна завантажувати на аркуш без двох інших.
+18. ~~test\_All обчислює test\_Summary і test\_Load двічі~~: закрито у v4.11 — на аркуші лише test\_All, інші два лише підключення.
 19. Решта запитів, що збирають результати (qc\_Reports-залежні звіти, pq\_SchemaIssues), переглядають вхід один раз; правило 6.12 застосовувати до кожного нового запиту.
 20. ~~Патч H2~~: вужчий буфер перед фільтрами службових рядків — залишено: pq\_QualitySummary 202,8 с проти 217 с (−7%, близько до розкиду між запусками; виграш лише для призначень із фільтрами, зараз Registry). Решта підключень: test\_All 15,8 с, test\_Summary 11,6 с, test\_Load 6,2 с, pq\_ExtractedColumns 3,5 с — R1 для CSV не потрібен.
 22. ~~Вартість перевірок по колонках у звіті якості~~: виміряно діагностичними запитами (zz\_diag\_ReportCost, zz\_diag\_SourceCost, zz\_diag\_ColumnCost) і усунуто патчами J, K, L (розділ 6.12). Профайлер після J–L: pq\_QualitySummary 67,7 с (було 202,8 с).
@@ -507,7 +524,16 @@ modExport (ExportSheetToCleanWorkbook) і старий модуль вибору
 25. cfgRowOperators (аудит D8, решта переліків): оператори фільтрів досі описані в fn\_ApplyRowFilters, pq\_RowFiltersCheck і tblOperator.
 26. fn\_Canon читає tblTargetType кілька разів за одне завантаження (мілісекунди) — за потреби передавати готові функції Canon через fn\_LoadConfig.
 27. BasePath (Path як іменована клітинка з базовим каталогом) — відкладено рішенням користувача.
+29. ~~SetupTestEngine завантажує три таблиці~~: закрито у v4.11 (лише test\_All у A3).
+30. ~~Пакет v4.11~~: зібрано 25.10.2026.
+31. Звірка книги D:\GitHub\PQ\_Engine\TEST\_PQ\_ENGINE.xlsm з пакетом (25.10.2026): 64 запити збігаються з пакетом, 65-й — q\_GO (лише підключення, у реєстрі тестової книги рядків GO немає); 9 модулів VBA збігаються з точністю до регістру ідентифікаторів. Редактор VBA вирівнює регістр однойменних ідентифікаторів у всьому проєкті (параметри value, formula, path, charset, title, anchor, t/T, BaseName перетворюють .Value → .value, .Formula → .formula тощо), тож після кожного імпорту модулів з пакета Git показуватиме зміни регістру. ~~Рішення~~: закрито у v4.11 — параметри й змінні перейменовано (розділ 6.15); q\_GO у тестовій книзі видалити вручну.
+32. ~~Описи запитів не експортуються~~: з v4.11 поле description у queries.yml і README. Застарілі описи виправити в книзі (редактор Power Query → Властивості запиту): cfgTypeMap («Централізований конфіг» → «Карта типів даних: DataType схеми → тип M»), fn\_SourcePath («читає значення запису» → «шлях до файла рядка реєстру: FullPath або Path + FileName»), fn\_Opt («значення з реєстру або дефолт» — поточний), за потреби решту.
+33. 45 підключень, з них ~22 для функцій fn\_… (зокрема «fn\_ReadSource(1)») — зайві, але нешкідливі; профайлер їх пропускає.
+34. tblSchemaColumns — результат запиту pq\_ExtractedColumns з префіксом tbl (правило: tbl — ручні таблиці). На неї посилається іменована формула списків Data Validation; перейменування Excel оновлює автоматично. Низький пріоритет.
 28. engLoadQueryToSheet і завантаження нових q\_: ставити таблицю на окремий аркуш у A3 відразу (зараз Excel ставить у A1, і рядки вставляє UpdateHelp).
+
+35. NonEmpty з одним try на рядок (v4.10): один раз заміряти профайлером на GO3 у робочій книзі проти v4.9, щоб закрити питання вартості (аудит 25.10.2026, розділ 4).
+36. Повторний аудит 25.10.2026 (після першого експорту в Git): усі тези перевірено в коді й підтверджено; виправлення — v4.11 (розділи 6.8, 6.11, 6.14, 6.15). Тексти hlp-таблиць (hlpSourceRegistry, hlpSchemaRegistry, hlpErrorThreshold, опис у каталозі) виправляються в книзі вручну — заміни в MIGRATION\_v4.11.md.
 
 ## 9. Журнал змін
 
@@ -529,4 +555,4 @@ modExport (ExportSheetToCleanWorkbook) і старий модуль вибору
 | v4.8 | 17.10.2026 | Етап D (патчі F, F1–F3). VBA: спільний модуль modEngineCommon (аудит D13), усі макроси, крім імпорту й SetupTestEngine, переведено на нього; новий modRunLog (RefreshWithRunLog, tblRunLog); експорт для Git v2 (точні залежності, очищення застарілих файлів, таблиці конфігурації в CSV, тип Function); профайлер (ім'я запиту за Location=, підсумок на PQ\_ProfilerSummary, сортування, видалення старих SUMMARY). M: cfgSettings[Extensions] у fn\_ParseSource і fn\_ParseHeaders (аудит D8 у частині розширень), test\_Extensions (test\_All — 8 наборів); Table.Buffer у pq\_ExtractedColumns, pq\_SchemaDrift, test\_Summary і лічба помилок за один перегляд у test\_Load (оновлення 502 → 34 с). Розділи 6.8 (макроси) і 6.12 (продуктивність); позначка «Оновлювати під час оновлення всіх» у розділі 5 |
 | v4.9 | 23.10.2026 | Патчі G, G1, H (відкочено), H2, I, J, K, L. fn\_SchemaReport: List.Buffer для перевірок колонок, помилки по колонках лише серед рядків з помилками, null через fn\_ColumnNullCounts (Table.Profile); test\_NullCounts; test\_All — 9 наборів; звіт якості реальних джерел у ~5 разів швидший. fn\_QcReports і fn\_SummaryTable (тіла qc\_Reports і pq\_QualitySummary як функції); test\_Summary рахує лише тестові SourceID і сам читає tblTestExpected, src\_TestExpected видалено. RefreshWithRunLog: замість другого оновлення зведення перевіряє й вмикає «Оновлювати під час оновлення всіх». Структура тек Power Query (розділ 5.1), cfgQueryGroups і поле group у queries.yml. Розділ 6.12 доповнено вимірюваннями на 200 МБ і висновком «обсяг читання не дорівнює часу». Зовнішній аудит концепції: external\_review\_2026-10-20.md |
 | v4.10 | 24.10.2026 | Патчі N, N2, N3 за двома аудитами коду (розділ 6.13): правила компілюються з перевіркою назв DataType/CustomTransform; клітинки-помилки не ламають відсікання порожніх рядків і не збігаються з фільтрами; фільтри в культурі cfgSettings; ErrorPolicy/ErrorThreshold/Culture лише з реєстру чи cfgSettings; джерела без періоду не дають дубль періоду; EmptyColumns без відсутніх колонок; BOM у fn\_ParseHeaders; MetaColumns — запис; tblPeriod у cfgSettings[Tables]; один буфер у fn\_EnforceSchema для Strict і порогу; підказки про пробіли в заголовках; ЗбігЗМетаколонкою. Тести: test\_AuditFixes, test\_HeadersConsistency, новий test\_RowFilters (13 випадків), test\_Load з одним завантаженням; test\_RowFiltersReal видалено; test\_All — 11 наборів. Профайлер: ручний режим обчислення, прогрів, без «лише підключень», відновлення фонового режиму. Експорт: типи Function/Config/Source/Workbook/Transform/Standalone |
-| v4.11 | 24.10.2026 | modTableCatalog: процедура UpdateHelp (ListAllTables видалено). Аркуш HELP замість «Список\_Таблиць» (перейменовано один раз вручну/макросом, код перейменування прибрано), каталог з колонками Підпис, Довідка, Порушення, таблиця hlpProject з правилами структури книги, підписи над таблицями (назва, посилання на призначення в каталозі, посилання на hlp-довідку), шапки не вище рядка 3. Правила — розділ 6.14; ExportPowerQueriesToRepo створює powerquery\README.md з hlpProject, tblTableCatalog, hlp-таблиць і cfgQueryGroups; прибрано одноразовий код (перейменування аркуша, очищення імен підписів v4.11b–c, видалення старих блоків SUMMARY у профайлері, стартовий опис таблиць «Опис\_»); tblRunLog і pq\_QualitySummary з RefreshWithRunLog ставляться в A3; експорт модулів VBA у powerquery\vba і розділ «Макроси VBA» в README, tblTableCatalog виключено з CSV; шаблон репозиторію (.gitattributes, .gitignore, README, tests\ з фікстурами, docs\) |
+| v4.11 | 25.10.2026 | Довідка в книзі: modTableCatalog.UpdateHelp — аркуш HELP, каталог tblTableCatalog (Підпис, Довідка, Порушення), hlpProject з правилами з коду (перезаписується, розділ 6.14), підписи над таблицями (формули Excel 2021+), шапки з рядка 3. Git (розділ 6.15): експорт модулів VBA, README.md з книги, описи запитів, tblTableCatalog не в CSV, тестова книга не експортується; шаблон репозиторію з tests\ (фікстури, test\_config.xlsx, test\_\*.pq, gen\_fixtures.py) і docs\. За повторним аудитом: SetupTestEngine для пакета і репозиторію, лише test\_All у A3, помилка без .pq; таблиці запитів без «tbl\_»; ImportPQ у ThisWorkbook з пошуком підтек; обробники помилок RunLog і CleanExport, BreakLink; стабільний регістр ідентифікаторів VBA; gen\_fixtures без обов'язкового README\_stageC.md; fn\_EffectiveSettings без мертвого коду options; коментарі в fn\_SummaryTable і fn\_GetSchemaRules; виправлено застарілі місця документа (options, test\_RowFiltersReal, правило буфера). Прибрано одноразовий код (ListAllTables, перейменування аркуша, SUMMARY профайлера) |

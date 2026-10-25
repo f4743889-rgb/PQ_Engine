@@ -1,4 +1,4 @@
-﻿// test_RowFilters: fn_ApplyRowFilters - усі оператори, Use, регістр і пробіли, числові клітинки, помилки.
+// test_RowFilters: fn_ApplyRowFilters - усі оператори, Use, регістр і пробіли, числові клітинки, помилки.
 // Очікування: у всіх рядках Pass = TRUE. Дані задано в коді.
 let
     Rules = (rows as list) as table =>

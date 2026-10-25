@@ -174,7 +174,12 @@ LOAD = [
 ]
 
 wb = Workbook(); ws = wb.active; ws.title = 'Інструкція'
-for line in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'README_stageC.md'), encoding='utf-8').read().splitlines():
+# Текст інструкції: README.md поруч зі скриптом (репозиторій: tests\README.md) або README_stageC.md (пакет: tools\);
+# якщо жодного немає, аркуш лишається з одним рядком-посиланням (v4.11)
+_here = os.path.dirname(os.path.abspath(__file__))
+_doc = next((p for p in (os.path.join(_here, 'README.md'), os.path.join(_here, 'README_stageC.md')) if os.path.exists(p)), None)
+_lines = open(_doc, encoding='utf-8').read().splitlines() if _doc else ['Інструкція: tests/README.md у репозиторії або test_engine/README_stageC.md у пакеті.']
+for line in _lines:
     ws.append([line])
 ws.column_dimensions['A'].width = 140
 

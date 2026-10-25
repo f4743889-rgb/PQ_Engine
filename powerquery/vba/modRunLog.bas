@@ -2,7 +2,7 @@ Attribute VB_Name = "modRunLog"
 Option Explicit
 
 ' ============================================================================
-' modRunLog: оновлення книги з журналом запусків (етап D, крок «журнал запусків»)
+' modRunLog: оновлення книги з журналом запусків (етап D; v4.11)
 ' Потребує modEngineCommon.
 '
 ' RefreshWithRunLog:
@@ -25,7 +25,7 @@ Private Const QUALITY_SHEET As String = "Якість"
 Public Sub RefreshWithRunLog()
     Dim note As String, t0 As Double, dur As Double, refreshErr As String, runAt As Date
     Dim qs As ListObject, reg As ListObject, lg As ListObject, i As Long, runId As Long, n As Long
-    Dim sid As String, rr As Long, path As String, flag As String
+    Dim sid As String, rr As Long, filePath As String, flag As String
     Dim nOK As Long, nWarn As Long, nFail As Long, failIds As String
 
     note = engLoadSettings()
@@ -33,6 +33,7 @@ Public Sub RefreshWithRunLog()
         If MsgBox(note & vbCrLf & vbCrLf & "Продовжити?", vbYesNo + vbExclamation, "Журнал запусків") = vbNo Then Exit Sub
     End If
 
+    On Error GoTo Fail
     ' Зведення якості має бути на аркуші ДО оновлення: інакше після «Оновити все» журнал
     ' не буде звідки взяти (у тестовій книзі pq_QualitySummary - лише підключення)
     Set qs = engFindQueryTable(SUMMARY_QUERY)
@@ -53,7 +54,7 @@ Public Sub RefreshWithRunLog()
         refreshAllOk = (Err.Number = 0 And .RefreshWithRefreshAll)
     End With
     Err.Clear
-    On Error GoTo 0
+    On Error GoTo Fail
 
     runAt = Now
     t0 = Timer
@@ -81,7 +82,7 @@ Public Sub RefreshWithRunLog()
         qs.QueryTable.Refresh BackgroundQuery:=False
         If Err.Number <> 0 Then sumErr = Err.Description
         Err.Clear
-        On Error GoTo 0
+        On Error GoTo Fail
         Application.StatusBar = False
         dur = Timer - t0
         If dur < 0 Then dur = dur + 86400
@@ -97,12 +98,12 @@ Public Sub RefreshWithRunLog()
         For i = 1 To qs.ListRows.Count
             sid = Trim$(CStr(engCell(qs, i, "SourceID")))
             flag = UCase$(Trim$(CStr(engCellOpt(qs, i, "QualityFlag", ""))))
-            path = ""
+            filePath = ""
             rr = 0
             If Not reg Is Nothing Then rr = RegistryRow(reg, sid)
-            If rr > 0 Then path = engSourcePath(reg, rr)
+            If rr > 0 Then filePath = engSourcePath(reg, rr)
 
-            AppendLog lg, runId, runAt, dur, refreshErr, qs, i, path
+            AppendLog lg, runId, runAt, dur, refreshErr, qs, i, filePath
             n = n + 1
 
             Select Case flag
@@ -122,18 +123,25 @@ Public Sub RefreshWithRunLog()
            IIf(failIds <> "", vbCrLf & vbCrLf & "Завантаження зупиниться для:" & failIds, "") & vbCrLf & vbCrLf & _
            "Журнал: аркуш «" & lg.Parent.Name & "», таблиця " & LOG_TABLE, _
            IIf(nFail > 0 Or refreshErr <> "", vbExclamation, vbInformation), "Журнал запусків"
+    Exit Sub
+Fail:
+    Dim errMsg As String: errMsg = Err.Description
+    Application.StatusBar = False
+    Application.Cursor = xlDefault
+    Application.ScreenUpdating = True
+    MsgBox "Журнал запусків перервано: " & errMsg, vbCritical, "Журнал запусків"
 End Sub
 
 ' Рядок журналу для i-го рядка зведення
 Private Sub AppendLog(lg As ListObject, runId As Long, runAt As Date, dur As Double, refreshErr As String, _
-                      qs As ListObject, i As Long, path As String)
+                      qs As ListObject, i As Long, filePath As String)
     Dim lr As ListRow, fm As Variant, fs As Variant
     fm = Empty: fs = Empty
-    If path <> "" Then
-        If engFileExists(path) Then
+    If filePath <> "" Then
+        If engFileExists(filePath) Then
             On Error Resume Next
-            fm = FileDateTime(path)
-            fs = Round(FileLen(path) / 1024, 1)
+            fm = FileDateTime(filePath)
+            fs = Round(FileLen(filePath) / 1024, 1)
             On Error GoTo 0
         End If
     End If
@@ -153,7 +161,7 @@ Private Sub AppendLog(lg As ListObject, runId As Long, runAt As Date, dur As Dou
     SetLogCell lg, lr, "Rows", engCellOpt(qs, i, "Rows", Empty)
     SetLogCell lg, lr, "ErrorRows", engCellOpt(qs, i, "ErrorRows", Empty)
     SetLogCell lg, lr, "RowsDropped", engCellOpt(qs, i, "RowsDropped", Empty)
-    SetLogCell lg, lr, "FilePath", IIf(path = "", Empty, path)
+    SetLogCell lg, lr, "FilePath", IIf(filePath = "", Empty, filePath)
     SetLogCell lg, lr, "FileModified", fm
     SetLogCell lg, lr, "FileSizeKB", fs
     SetLogCell lg, lr, "User", Application.UserName

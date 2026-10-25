@@ -1,7 +1,4 @@
 ﻿TargetType;Опис
-TestCsv;Тести Engine: CSV
-TestXlsx;Тести Engine: Excel
-TestNoSchema;Тести Engine: призначення без схеми
 IK;Файл аналізу інвентарної картотеки
 KGO;Файл аналізу картотеки групового обліку
 INMA;Файл аналізу картотеки ІНМА

@@ -2,12 +2,12 @@ Attribute VB_Name = "modExportPowerQueryCodesToRepo"
 Option Explicit
 
 ' ============================================================================
-' modExportPowerQueryCodesToRepo: експорт коду Power Query і таблиць конфігурації для Git
+' modExportPowerQueryCodesToRepo: експорт коду Power Query, таблиць, модулів VBA і README для Git (v4.11)
 ' (етап D, аудит D13). Потребує modEngineCommon.
 '
 ' Структура поруч із книгою:
 '   powerquery\queries\<ім'я>.pq     код кожного запиту (UTF-8)
-'   powerquery\metadata\queries.yml  тека (group, з cfgQueryGroups), тип запиту, таблиця
+'   powerquery\metadata\queries.yml  тека (group, з cfgQueryGroups), опис (Description), тип, таблиця
 '                                    завантаження, залежності
 '   powerquery\tables\<таблиця>.csv  таблиці книги, які заповнюють вручну (реєстр, схема,
 '                                    фільтри, довідники); таблиці-результати запитів не
@@ -16,20 +16,23 @@ Option Explicit
 '                                    історія і мінливі колонки; зміст каталогу - у README)
 '   powerquery\vba\<модуль>.bas|.cls|.frm  модулі VBA (VBComponent.Export, ANSI = cp1251;
 '                                    .gitattributes зберігає їх у Git в UTF-8)
-' Перед експортом старі .pq, .csv і модулі VBA видаляються, тож Git бачить і видалені запити,
-' таблиці чи модулі. Модулі VBA потребують «Довіряти доступ до об'єктної моделі проєкту VBA»
-' (Центр безпеки -> Параметри макросів); без доступу тека vba не чіпається.
-' Клітинки з формулами експортуються формулою (наприклад, Path = =TestDir).
 '   powerquery\README.md             довідка проєкту (генерується, вручну не редагувати):
 '                                    правила з hlpProject, таблиці з tblTableCatalog,
 '                                    hlp-довідки до таблиць, запити за теками cfgQueryGroups,
 '                                    макроси VBA
+' Перед експортом старі .pq, .csv і модулі VBA видаляються, тож Git бачить і видалені запити,
+' таблиці чи модулі. Модулі VBA потребують «Довіряти доступ до об'єктної моделі проєкту VBA»
+' (Центр безпеки -> Параметри макросів); без доступу тека vba не чіпається.
+' Клітинки з формулами експортуються формулою (наприклад, Path = =TestDir).
+' Тестову книгу (з tblTestExpected) експорт не обробляє: репозиторій дзеркалить робочу книгу.
 ' Залежності шукаються за точними ідентифікаторами M без коментарів і текстових літералів.
 ' ============================================================================
 
 ' Таблиці, які не експортуються: журнал запусків накопичує історію; каталог таблиць має мінливі
 ' колонки (Діапазон, Рядків, Порушення), а його зміст потрапляє в README.md
 Private Const EXCLUDED_TABLES As String = "|tblRunLog|tblTableCatalog|"
+' Ознака тестової книги: її не експортують (репозиторій дзеркалить робочу книгу)
+Private Const TEST_MARKER_TABLE As String = "tblTestExpected"
 
 ' Карта тек з cfgQueryGroups (заповнює LoadQueryGroups)
 Private mGroups As Object        ' ім'я запиту -> тека
@@ -50,6 +53,16 @@ Public Sub ExportPowerQueriesToRepo()
         MsgBox "Спершу збережіть книгу: файли експортуються в теку поруч із нею.", vbExclamation
         Exit Sub
     End If
+    ' Репозиторій дзеркалить робочу книгу; тестова (з tblTestExpected) замінила б робочу
+    ' конфігурацію (реєстр, схему, фільтри) тестовою. Тестова конфігурація - у tests\test_config.xlsx.
+    If Not engFindTable(TEST_MARKER_TABLE) Is Nothing Then
+        MsgBox "Це тестова книга (є таблиця " & TEST_MARKER_TABLE & "): експорт зупинено." & vbCrLf & vbCrLf & _
+               "Теку powerquery\ у репозиторії заповнює лише робоча книга. Тестова конфігурація " & _
+               "зберігається в tests\test_config.xlsx, тестові запити - у tests\queries.", _
+               vbExclamation, "Export"
+        Exit Sub
+    End If
+
     qDir = root & "\powerquery\queries"
     mDir = root & "\powerquery\metadata"
     tDir = root & "\powerquery\tables"
@@ -188,6 +201,7 @@ Private Function BuildQueriesYaml() As String
         txt = txt & "  - name: " & YamlQuote(q.Name) & vbCrLf
         txt = txt & "    file: " & YamlQuote("../queries/" & engSafeFileName(q.Name) & ".pq") & vbCrLf
         txt = txt & "    group: " & YamlQuote(GroupOf(q.Name)) & vbCrLf
+        txt = txt & "    description: " & YamlQuote(QueryDescription(q)) & vbCrLf
         txt = txt & "    type: " & YamlQuote(DetectQueryType(q.formula, deps <> "")) & vbCrLf
         txt = txt & "    loads_to_table: " & YamlQuote(loadTo) & vbCrLf
         If deps = "" Then
@@ -209,7 +223,7 @@ Private Function BuildReadme() As String
     Dim r As Long, k As Long, sec As String, prev As String, first As Boolean
     mReadmeNote = ""
 
-    t = "# " & MdText(BaseName(ThisWorkbook.Name)) & vbCrLf & vbCrLf
+    t = "# " & MdText(FileBaseName(ThisWorkbook.Name)) & vbCrLf & vbCrLf
     t = t & "> Файл створює макрос ExportPowerQueriesToRepo з таблиць книги (" & README_RULES & ", " & _
         README_CATALOG & ", hlp-таблиці, " & GROUPS_QUERY & "). Вручну не редагувати: зміни вносяться в книгу." & _
         vbCrLf & vbCrLf
@@ -285,8 +299,8 @@ Private Sub AddReadmeNote(s As String)
     mReadmeNote = mReadmeNote & IIf(mReadmeNote = "", "", ", ") & s
 End Sub
 
-Private Function BaseName(fileName As String) As String
-    If InStrRev(fileName, ".") > 1 Then BaseName = Left$(fileName, InStrRev(fileName, ".") - 1) Else BaseName = fileName
+Private Function FileBaseName(fileName As String) As String
+    If InStrRev(fileName, ".") > 1 Then FileBaseName = Left$(fileName, InStrRev(fileName, ".") - 1) Else FileBaseName = fileName
 End Function
 
 ' Текст для Markdown: без розриву таблиці «|» і рядків
@@ -378,7 +392,8 @@ Private Function QueriesSection() As String
             If qNames.Exists(CStr(dep)) And CStr(dep) <> q.Name Then hasDeps = True: Exit For
         Next dep
         byGroup(g) = byGroup(g) & "- [" & MdText(q.Name) & "](<queries/" & engSafeFileName(q.Name) & ".pq>) — " & _
-                     DetectQueryType(q.formula, hasDeps) & vbCrLf
+                     DetectQueryType(q.formula, hasDeps) & _
+                     IIf(QueryDescription(q) <> "", " — " & MdText(QueryDescription(q)), "") & vbCrLf
     Next q
     If byGroup.Count = 0 Then Exit Function
 
@@ -519,9 +534,9 @@ End Function
 '   Config    - запис або список-літерал (cfg*): код починається з [ або {
 '   Source    - відкриває файли, бази чи веб
 '   Workbook  - читає таблиці чи іменовані клітинки книги (Excel.CurrentWorkbook)
-Private Function DetectQueryType(formula As String, hasDeps As Boolean) As String
+Private Function DetectQueryType(mText As String, hasDeps As Boolean) As String
     Dim f As String, fn As Variant
-    f = LCase$(Trim$(Replace(Replace(Replace(engStripMComments(formula), vbCr, " "), vbLf, " "), vbTab, " ")))
+    f = LCase$(Trim$(Replace(Replace(Replace(engStripMComments(mText), vbCr, " "), vbLf, " "), vbTab, " ")))
 
     If Left$(f, 1) = "(" Then DetectQueryType = "Function": Exit Function
     If Left$(f, 1) = "[" Or Left$(f, 1) = "{" Then DetectQueryType = "Config": Exit Function
@@ -538,8 +553,15 @@ Private Function DetectQueryType(formula As String, hasDeps As Boolean) As Strin
     If hasDeps Then DetectQueryType = "Transform" Else DetectQueryType = "Standalone"
 End Function
 
-Private Function YamlQuote(value As String) As String
-    YamlQuote = """" & Replace(Replace(value, "\", "\\"), """", "\""") & """"
+' Опис запиту (властивість Description: підказка в редакторі Power Query); "" якщо немає
+Private Function QueryDescription(q As WorkbookQuery) As String
+    On Error Resume Next
+    QueryDescription = Trim$(Replace(Replace(q.Description, vbCr, " "), vbLf, " "))
+    On Error GoTo 0
+End Function
+
+Private Function YamlQuote(txtValue As String) As String
+    YamlQuote = """" & Replace(Replace(txtValue, "\", "\\"), """", "\""") & """"
 End Function
 
 ' ================== CSV ==================

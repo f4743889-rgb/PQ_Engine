@@ -1,7 +1,7 @@
 ﻿Колонка;Тип даних / Валідація;Призначення та Логіка;Інфо
 SourceID;Text / Auto;Унікальний код джерела (наприклад, SALES_MON, BANK_STMT). Зручно для прив'язки до схем.;
 TargetType (Призначення);Data Validation (Список);Категорія/призначення файлу. Прив'язує файл до відповідної бізнес-логіки та схеми.;tblTargetType
-FullPath (ПовнийШлях);Text (Ручно / Макрос);Повна адреса файлу. Якщо заповнено — Path і FileName вираховуються формулами.;
+FullPath (ПовнийШлях);Text (Ручно / Макрос);Повна адреса файлу. Має пріоритет над Path + FileName (fn_SourcePath). Макрос SelectSourceFiles записує FullPath і очищає Path і FileName цього рядка.;
 Path (Шлях);Text;Каталог розміщення файлу.;
 FileName (Ім'я файлу);Text;Назва файлу з розширенням (.xlsx, .csv).;
 TableSheetName (TableName);Text (Опційно);Назва листа або таблиці всередині Excel-файлу/бази даних.;
@@ -9,5 +9,8 @@ PeriodType (Тип періоду);Data Validation (Список);Визначе
 PeriodNumber (Номер періоду);Data Validation (Список);Динамічний список, залежний від PeriodType. Визначається іменованою формулою GetPeriodNumbers.;
 IsRequired (Required);Logical (TRUE / FALSE);Якщо порожнє або TRUE, і файл відсутній — Power Query видає критичну помилку/стоп. Якщо FALSE — файл пропускається.;
 Enabled;Logical (TRUE / FALSE);Дозволяє тимчасово відключати обробку окремого джерела без видалення рядка з таблиці.;
-ErrorPolicy;Text;Визначає рівень суворості обробки помилок. Опис - у tblErrorPolicy;tblErrorPolicy
-ErrorThreshold;Number;Визначає поріг помилок у даних, додаткові відомості у hlpErrorThreshold;hlpErrorThreshold
+Delimiter;Text (Опційно);"Роздільник CSV для цього джерела (наприклад, ; або ,). Порожньо — cfgSettings[CsvDelimiter].";
+Encoding;Number (Опційно);Кодова сторінка CSV: 65001 (UTF-8) або 1251. Мітка BOM у файлі має пріоритет. Порожньо — cfgSettings[CsvEncoding].;
+Culture;Text (Опційно);Культура розпізнавання чисел і дат під час типізації (наприклад, uk-UA). Порожньо — cfgSettings[Culture].;
+ErrorPolicy;Text ;Рівень суворості обробки помилок (Strict, Report, Lenient), опис — у tblErrorPolicy. Порожньо — cfgSettings[ErrorPolicy]. Задається лише тут або в cfgSettings.;tblErrorPolicy
+ErrorThreshold;Number;Поріг частки рядків з помилками (лише для Report і Lenient). Порожньо — cfgSettings[ErrorThreshold]. Допустимі значення — у hlpErrorThreshold.;hlpErrorThreshold

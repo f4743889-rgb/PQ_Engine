@@ -1,4 +1,4 @@
-﻿// test_Extensions: розширення файлів з cfgSettings[Extensions]. Очікування: у всіх рядках Pass = TRUE.
+// test_Extensions: розширення файлів з cfgSettings[Extensions]. Очікування: у всіх рядках Pass = TRUE.
 // Файли не відкриває: вміст CSV задано текстом, тому запит не залежить від тестових файлів.
 let
     Ex   = cfgSettings[Extensions],

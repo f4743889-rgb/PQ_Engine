@@ -1,7 +1,15 @@
 Attribute VB_Name = "modCleanExportSelectedSheets"
 Option Explicit
 
+' ============================================================================
+' modCleanExportSelectedSheets: експорт виділених аркушів в окремі книги без запитів і зв'язків (v4.11)
 ' Потребує modEngineCommon: імена файлів очищує engSafeFileName (етап D, аудит D13).
+'
+' CleanExportSelectedSheets: кожен виділений аркуш -> окрема .xlsx у вибраній теці.
+' У копії видаляються запити й підключення, таблиці запитів від'єднуються від QueryTable,
+' а формули з посиланнями на інші аркуші книги-джерела замінюються значеннями (BreakLink),
+' щоб файл не мав зовнішніх зв'язків. Якщо стається помилка, незбережена копія закривається.
+' ============================================================================
 
 Sub CleanExportSelectedSheets()
 
@@ -16,6 +24,8 @@ Sub CleanExportSelectedSheets()
     Dim exportPath  As String
     Dim fd          As FileDialog
     Dim lo          As ListObject
+    Dim links       As Variant
+    Dim lnk         As Variant
 
     Set wbSrc = ActiveWorkbook     ' < запам'ятовуємо до будь-яких дій
 
@@ -94,21 +104,38 @@ Sub CleanExportSelectedSheets()
         Next lo
         On Error GoTo CleanUp
 
+        ' Формули з посиланнями на інші аркуші після ws.Copy посилаються на книгу-джерело:
+        ' розриваємо зв'язки (формули стають значеннями)
+        links = wbNew.LinkSources(xlExcelLinks)
+        If Not IsEmpty(links) Then
+            For Each lnk In links
+                wbNew.BreakLink Name:=CStr(lnk), Type:=xlLinkTypeExcelLinks
+            Next lnk
+        End If
+
         wbNew.SaveAs fileName:=UniqueFilePath(exportPath, wsName & extraText), _
                      FileFormat:=xlOpenXMLWorkbook, _
                      CreateBackup:=False
         wbNew.Close SaveChanges:=False
+        Set wbNew = Nothing
 
         exportCount = exportCount + 1
 
     Next i
 
 CleanUp:
+    Dim errNum As Long, errDesc As String
+    errNum = Err.Number: errDesc = Err.Description
+    If errNum <> 0 And Not wbNew Is Nothing Then
+        On Error Resume Next
+        wbNew.Close SaveChanges:=False                ' незбережена копія не лишається відкритою
+        On Error GoTo 0
+    End If
     Application.ScreenUpdating = True
     Application.DisplayAlerts = True
 
-    If Err.Number <> 0 Then
-        MsgBox "Помилка: " & Err.Description, vbCritical
+    If errNum <> 0 Then
+        MsgBox "Помилка: " & errDesc & IIf(exportCount > 0, vbLf & "Експортовано до помилки: " & exportCount, ""), vbCritical
     ElseIf exportCount > 0 Then
         MsgBox "Готово! Експортовано аркушів: " & exportCount & vbLf & _
                "Папка: " & exportPath, vbInformation
@@ -116,15 +143,15 @@ CleanUp:
 
 End Sub
 
-Function UniqueFilePath(folder As String, BaseName As String) As String
+Function UniqueFilePath(folder As String, baseFile As String) As String
     Dim fullPath As String
     Dim counter  As Long
 
-    fullPath = folder & "\" & BaseName & ".xlsx"
+    fullPath = folder & "\" & baseFile & ".xlsx"
     counter = 1
 
     Do While Dir(fullPath) <> ""
-        fullPath = folder & "\" & BaseName & "_" & counter & ".xlsx"
+        fullPath = folder & "\" & baseFile & "_" & counter & ".xlsx"
         counter = counter + 1
     Loop
 

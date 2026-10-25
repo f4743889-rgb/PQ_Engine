@@ -2,52 +2,55 @@ Attribute VB_Name = "modSetupTestEngine"
 Option Explicit
 
 ' ============================================================================
-' modSetupTestEngine: перетворення КОПІЇ книги Engine на тестову (етап C)
+' modSetupTestEngine: перетворення КОПІЇ книги Engine на тестову (етап C; v4.11)
 '
-' Запуск: імпортуйте модуль у тестову книгу, запустіть SetupTestEngine і виберіть
-' розпаковану теку пакета (у ній мають бути теки engine і test_engine).
+' Запуск: імпортуйте модуль у тестову книгу, запустіть SetupTestEngine і виберіть теку
+' пакета Engine або клон Git-репозиторію. Розпізнаються обидві структури:
+'   пакет:       test_engine\test_config.xlsx, test_engine\fixtures, engine\powerquery (Engine + test_*)
+'   репозиторій: tests\test_config.xlsx, tests\fixtures, powerquery\queries (Engine) + tests\queries (test_*)
 '
 ' Що робить (повторний запуск безпечний, дані тестів просто перезаписуються):
 '   1. додає тестові призначення в tblTargetType (TestCsv, TestXlsx, TestNoSchema);
 '   2. замінює рядки tblSourceRegistry, tblSchemaRegistry, tblRowFilters рядками
-'      з test_config.xlsx і очищає tblDefaultHeaders; Path = тека fixtures пакета;
+'      з test_config.xlsx і очищає tblDefaultHeaders; Path = тека fixtures;
 '      відсутні колонки реєстру (наприклад, ErrorThreshold) додає;
 '   3. створює або оновлює tblTestExpected і tblTestLoad;
-'   4. імпортує всі запити з engine\powerquery (Engine v4.5 і тести);
-'   5. завантажує test_All, test_Summary, test_Load на аркуш «Тести» і оновлює їх.
+'   4. імпортує всі запити (.pq) з тек структури; якщо не знайдено жодного або немає test_All -
+'      зупиняється з помилкою (інакше книга мовчки лишилася б на старому коді);
+'   5. завантажує на аркуш «Тести» лише test_All (шапка в A3, таблиця test_All - правила hlpProject);
+'      test_Summary і test_Load - лише підключення: таблиці, лишені попередніми версіями, видаляє.
 ' НЕ запускайте в робочій книзі: реєстр і схема стануть тестовими.
 ' ============================================================================
 
-Private Const CFG_FILE   As String = "test_engine\test_config.xlsx"
-Private Const FIX_DIR    As String = "test_engine\fixtures"
-Private Const PQ_DIR     As String = "engine\powerquery"
 Private Const TEST_SHEET As String = "Тести"
 Private Const NOTE_COL   As String = "Опис (не копіювати)"
 
 Public Sub SetupTestEngine()
-    Dim root As String, fd As FileDialog, fso As Object, wbCfg As Workbook
+    Dim root As String, fd As FileDialog, wbCfg As Workbook, layout As String
+    Dim cfgFile As String, fixDir As String, pqDirs As Variant, d As Variant
     Dim report As String, nNew As Long, nUpd As Long
 
     Set fd = Application.FileDialog(msoFileDialogFolderPicker)
-    fd.title = "Виберіть розпаковану теку пакета (з теками engine і test_engine)"
+    fd.title = "Виберіть теку пакета Engine (engine, test_engine) або клон репозиторію (powerquery, tests)"
     If fd.Show <> -1 Then Exit Sub
     root = fd.SelectedItems(1)
     If Right$(root, 1) <> "\" Then root = root & "\"
 
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    If Not fso.FileExists(root & CFG_FILE) Or Not fso.FolderExists(root & FIX_DIR) _
-       Or Not fso.FolderExists(root & PQ_DIR) Then
-        MsgBox "У вибраній теці немає " & CFG_FILE & ", " & FIX_DIR & " або " & PQ_DIR & ".", _
+    layout = DetectLayout(root, cfgFile, fixDir, pqDirs)
+    If layout = "" Then
+        MsgBox "У вибраній теці не знайдено жодної зі структур:" & vbCrLf & _
+               "  пакет - test_engine\test_config.xlsx, test_engine\fixtures, engine\powerquery;" & vbCrLf & _
+               "  репозиторій - tests\test_config.xlsx, tests\fixtures, powerquery\queries, tests\queries.", _
                vbCritical, "Тестовий Engine"
         Exit Sub
     End If
 
-    If MsgBox("Книгу «" & ThisWorkbook.Name & "» буде перетворено на тестову:" & vbCrLf & vbCrLf & _
-              "• оновлено всі запити Power Query з " & PQ_DIR & ";" & vbCrLf & _
+    If MsgBox("Книгу «" & ThisWorkbook.Name & "» буде перетворено на тестову (" & layout & "):" & vbCrLf & vbCrLf & _
+              "• оновлено всі запити Power Query з " & Join(pqDirs, ", ") & ";" & vbCrLf & _
               "• замінено рядки tblSourceRegistry, tblSchemaRegistry, tblRowFilters, очищено tblDefaultHeaders;" & vbCrLf & _
               "• додано тестові призначення в tblTargetType і таблиці tblTestExpected, tblTestLoad;" & vbCrLf & _
-              "• на аркуш «" & TEST_SHEET & "» завантажено test_All, test_Summary, test_Load." & vbCrLf & vbCrLf & _
-              "Тестові файли: " & root & FIX_DIR & vbCrLf & _
+              "• на аркуш «" & TEST_SHEET & "» завантажено test_All." & vbCrLf & vbCrLf & _
+              "Тестові файли: " & root & fixDir & vbCrLf & _
               "(не переміщуйте цю теку після налаштування)" & vbCrLf & vbCrLf & _
               "НЕ запускайте це в робочій книзі. Продовжити?", _
               vbYesNo + vbExclamation + vbDefaultButton2, "Тестовий Engine") <> vbYes Then Exit Sub
@@ -56,12 +59,12 @@ Public Sub SetupTestEngine()
     Application.ScreenUpdating = False
     Application.EnableEvents = False
 
-    Set wbCfg = Workbooks.Open(root & CFG_FILE, ReadOnly:=True, UpdateLinks:=False)
+    Set wbCfg = Workbooks.Open(root & cfgFile, ReadOnly:=True, UpdateLinks:=False)
 
     report = report & "tblTargetType: додано " & _
           AddMissingValues(NeedTable("tblTargetType"), CfgRange(wbCfg, "Призначення"), "TargetType") & vbCrLf
     report = report & "tblSourceRegistry: " & _
-          ReplaceRows(NeedTable("tblSourceRegistry"), CfgRange(wbCfg, "Реєстр"), True, root & FIX_DIR) & " рядків" & vbCrLf
+          ReplaceRows(NeedTable("tblSourceRegistry"), CfgRange(wbCfg, "Реєстр"), True, root & fixDir) & " рядків" & vbCrLf
     report = report & "tblSchemaRegistry: " & _
           ReplaceRows(NeedTable("tblSchemaRegistry"), CfgRange(wbCfg, "Схема"), False) & " рядків" & vbCrLf
     report = report & "tblRowFilters: " & _
@@ -74,22 +77,25 @@ Public Sub SetupTestEngine()
     wbCfg.Close SaveChanges:=False
     Set wbCfg = Nothing
 
-    ImportQueries root & PQ_DIR, nNew, nUpd
+    For Each d In pqDirs
+        ImportQueries root & CStr(d), nNew, nUpd
+    Next d
+    If nNew + nUpd = 0 Then Err.Raise vbObjectError + 514, , "не знайдено жодного файла .pq у " & Join(pqDirs, ", ")
+    If Not QueryExists("test_All") Then Err.Raise vbObjectError + 515, , _
+        "після імпорту в книзі немає запиту test_All (" & nNew + nUpd & " файлів .pq): перевірте теку тестових запитів"
     report = report & "Запити Power Query: додано " & nNew & ", оновлено " & nUpd & vbCrLf
 
     Application.ScreenUpdating = True
     Application.StatusBar = "Завантаження тестових запитів..."
-    Dim ws As Worksheet
-    Set ws = EnsureSheet(TEST_SHEET)
-    report = report & LoadQueryToSheet("test_All", ws, "A1") & vbCrLf
-    report = report & LoadQueryToSheet("test_Summary", ws, "H1") & vbCrLf
-    report = report & LoadQueryToSheet("test_Load", ws, "O1") & vbCrLf
+    report = report & RemoveQueryTable("test_Summary") & RemoveQueryTable("test_Load")
+    report = report & LoadQueryToSheet("test_All", EnsureSheet(TEST_SHEET), "A3") & vbCrLf
     Application.StatusBar = False
     Application.EnableEvents = True
 
     MsgBox "Тестовий Engine налаштовано." & vbCrLf & vbCrLf & report & vbCrLf & _
            "Далі: Дані > Оновити все, потім аркуш «" & TEST_SHEET & "»: у test_All має бути Result = PASS." & vbCrLf & _
-           "Збережіть книгу.", vbInformation, "Тестовий Engine"
+           "Деталі FAIL - у test_Summary і test_Load (тимчасово завантажте потрібний на окремий аркуш)." & vbCrLf & _
+           "Збережіть книгу і запустіть UpdateHelp.", vbInformation, "Тестовий Engine"
     Exit Sub
 
 Fail:
@@ -102,6 +108,42 @@ Fail:
     MsgBox "Налаштування перервано: " & msg & vbCrLf & vbCrLf & "Виконано до помилки:" & vbCrLf & report, _
            vbCritical, "Тестовий Engine"
 End Sub
+
+' Структура вибраної теки: "пакет", "репозиторій" або "" (не знайдено). Заповнює шляхи відносно root.
+Private Function DetectLayout(root As String, ByRef cfgFile As String, ByRef fixDir As String, _
+                              ByRef pqDirs As Variant) As String
+    Dim fso As Object
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    If fso.FileExists(root & "test_engine\test_config.xlsx") And fso.FolderExists(root & "test_engine\fixtures") _
+       And fso.FolderExists(root & "engine\powerquery") Then
+        cfgFile = "test_engine\test_config.xlsx": fixDir = "test_engine\fixtures"
+        pqDirs = Array("engine\powerquery")
+        DetectLayout = "пакет"
+    ElseIf fso.FileExists(root & "tests\test_config.xlsx") And fso.FolderExists(root & "tests\fixtures") _
+       And fso.FolderExists(root & "powerquery\queries") And fso.FolderExists(root & "tests\queries") Then
+        cfgFile = "tests\test_config.xlsx": fixDir = "tests\fixtures"
+        pqDirs = Array("powerquery\queries", "tests\queries")
+        DetectLayout = "репозиторій"
+    End If
+End Function
+
+Private Function QueryExists(nm As String) As Boolean
+    Dim q As WorkbookQuery
+    For Each q In ThisWorkbook.Queries
+        If StrComp(q.Name, nm, vbTextCompare) = 0 Then QueryExists = True: Exit Function
+    Next q
+End Function
+
+' Видаляє таблицю запиту з аркуша (запит лишається як «лише підключення»)
+Private Function RemoveQueryTable(queryName As String) As String
+    Dim lo As ListObject
+    Set lo = FindQueryTable(queryName)
+    If lo Is Nothing Then Exit Function
+    On Error Resume Next
+    lo.Delete
+    If Err.Number = 0 Then RemoveQueryTable = queryName & ": таблицю прибрано з аркуша (лише підключення)" & vbCrLf
+    On Error GoTo 0
+End Function
 
 ' ================== ТАБЛИЦІ ==================
 Private Function CfgRange(wb As Workbook, sheetName As String) As Range
@@ -231,7 +273,11 @@ Private Function LoadQueryToSheet(queryName As String, ws As Worksheet, topLeft 
             .PreserveColumnInfo = True
         End With
         On Error Resume Next
-        lo.Name = "tbl_" & queryName
+        lo.Name = queryName
+        On Error GoTo Bad
+    ElseIf StrComp(lo.Name, "tbl_" & queryName, vbTextCompare) = 0 Then
+        On Error Resume Next
+        lo.Name = queryName                          ' назва з версій до v4.11
         On Error GoTo Bad
     End If
     lo.QueryTable.Refresh BackgroundQuery:=False
@@ -281,13 +327,13 @@ Private Function ColumnExists(lo As ListObject, colName As String) As Boolean
     Next lc
 End Function
 
-Private Function ReadUtf8(path As String) As String
+Private Function ReadUtf8(filePath As String) As String
     Dim st As Object
     Set st = CreateObject("ADODB.Stream")
     st.Type = 2
     st.charset = "utf-8"
     st.Open
-    st.LoadFromFile path
+    st.LoadFromFile filePath
     ReadUtf8 = st.ReadText
     st.Close
 End Function
