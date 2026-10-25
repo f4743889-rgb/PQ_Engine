@@ -1,0 +1,13 @@
+﻿Колонка;Тип даних / Валідація;Призначення та Логіка;Інфо
+SourceID;Text / Auto;Унікальний код джерела (наприклад, SALES_MON, BANK_STMT). Зручно для прив'язки до схем.;
+TargetType (Призначення);Data Validation (Список);Категорія/призначення файлу. Прив'язує файл до відповідної бізнес-логіки та схеми.;tblTargetType
+FullPath (ПовнийШлях);Text (Ручно / Макрос);Повна адреса файлу. Якщо заповнено — Path і FileName вираховуються формулами.;
+Path (Шлях);Text;Каталог розміщення файлу.;
+FileName (Ім'я файлу);Text;Назва файлу з розширенням (.xlsx, .csv).;
+TableSheetName (TableName);Text (Опційно);Назва листа або таблиці всередині Excel-файлу/бази даних.;
+PeriodType (Тип періоду);Data Validation (Список);Визначення періодичності звіту.;tblPeriodRules
+PeriodNumber (Номер періоду);Data Validation (Список);Динамічний список, залежний від PeriodType. Визначається іменованою формулою GetPeriodNumbers.;
+IsRequired (Required);Logical (TRUE / FALSE);Якщо порожнє або TRUE, і файл відсутній — Power Query видає критичну помилку/стоп. Якщо FALSE — файл пропускається.;
+Enabled;Logical (TRUE / FALSE);Дозволяє тимчасово відключати обробку окремого джерела без видалення рядка з таблиці.;
+ErrorPolicy;Text;Визначає рівень суворості обробки помилок. Опис - у tblErrorPolicy;tblErrorPolicy
+ErrorThreshold;Number;Визначає поріг помилок у даних, додаткові відомості у hlpErrorThreshold;hlpErrorThreshold

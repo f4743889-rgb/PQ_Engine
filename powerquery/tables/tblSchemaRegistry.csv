@@ -1,0 +1,13 @@
+﻿TargetType;SourceColumnName;TargetColumnName;DataType;IsRequired;TrimFlag;CustomTransform;Use
+TestCsv;Код;Code;text;TRUE;TRUE;;
+TestCsv;Назва;Name;text;TRUE;TRUE;CleanSpaces;
+TestCsv;Кількість;Qty;number;TRUE;;;
+TestCsv;Ціна, грн.;Price;number;FALSE;;NumText;
+TestCsv;Дата;Date;date;FALSE;;;
+TestCsv;Примітка;;text;FALSE;;;FALSE
+TestXlsx;Код;Code;text;TRUE;TRUE;;
+TestXlsx;Назва;Name;text;TRUE;TRUE;CleanSpaces;
+TestXlsx;Кількість;Qty;number;TRUE;;;
+TestXlsx;Ціна, грн.;Price;number;FALSE;;NumText;
+TestXlsx;Дата;Date;date;FALSE;;;
+TestXlsx;Примітка;;text;FALSE;;;FALSE

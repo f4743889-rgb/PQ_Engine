@@ -1,0 +1,4 @@
+﻿TargetType;SourceColumnName;Operator;Value;Use
+TestCsv;Код;StartsWith;Всього|Разом;TRUE
+TestCsv;Ціна, грн.;Equals;х|x;TRUE
+TestXlsx;Код;StartsWith;Всього;TRUE
