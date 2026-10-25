@@ -2,9 +2,9 @@
 
 | Тека | Що в ній | Звідки |
 | --- | --- | --- |
-| powerquery\ | Код запитів (.pq), queries.yml, таблиці конфігурації (CSV), модулі VBA, README.md з довідкою проєкту | Макрос ExportPowerQueriesToRepo **у робочій книзі**; вручну не редагувати |
-| tests\ | Фікстури, test_config.xlsx, тестові запити test_*.pq, генератор gen_fixtures.py | Пакет Engine; оновлюються вручну разом зі змінами тестів |
-| docs\ | Документ архітектури (architecture.md), зовнішній аудит | Пакет Engine |
+| powerquery\ | Код запитів (.pq), queries.yml, таблиці конфігурації (CSV), модулі VBA, README.md з довідкою проєкту | Макрос ExportPowerQueriesToRepo **у робочій книзі**; зміни коду приходять також гілками (див. нижче) |
+| tests\ | Фікстури, test_config.xlsx, тестові запити test_*.pq, генератор gen_fixtures.py | Оновлюються гілками разом зі змінами тестів |
+| docs\ | Документ архітектури (architecture.md), порядок переходу між версіями (MIGRATION_v4.11.md, MIGRATION_v4.12.md), зовнішній аудит | Оновлюються гілками |
 
 Довідка проєкту (правила структури книги, таблиці, запити, макроси): [powerquery/README.md](powerquery/README.md).
 
@@ -12,5 +12,14 @@
 Тестову книгу тримають поза репозиторієм; ExportPowerQueriesToRepo у ній зупиняється, щоб тестовий реєстр і схема
 не замінили робочі. Код запитів Engine в обох книгах однаковий; тестова конфігурація — у tests\test_config.xlsx.
 
-Звичайний цикл: зміни в робочій книзі → ExportPowerQueriesToRepo → GitHub Desktop: перегляд змін → commit → push.
+## Як приходять зміни
+
+1. Зміни коду, тестів і документів надходять окремою гілкою з pull request на GitHub.
+2. Перегляньте pull request і злийте його (Merge) на GitHub; потім у GitHub Desktop: гілка main → Fetch origin → Pull.
+3. Якщо змінився код: у робочій книзі ImportPQQueriesFromFolder → корінь клону (він сам знайде powerquery\queries);
+   змінені модулі — Alt+F11 → File → Import File з powerquery\vba (старий модуль перед цим видалити).
+4. Перевірка в книзі (Оновити все; у тестовій книзі — SetupTestEngine з кореня клону і test_All).
+5. ExportPowerQueriesToRepo у робочій книзі. Якщо імпорт пройшов правильно, у GitHub Desktop змін **немає** —
+   книга і репозиторій збігаються. Зміни, зроблені в самій книзі (реєстр, схема, довідки), комітьте як звичайно.
+
 Модулі VBA зберігаються в Git в UTF-8 і на диску в cp1251 (.gitattributes); не завантажуйте .bas через вебінтерфейс GitHub.
