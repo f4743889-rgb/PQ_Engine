@@ -93,7 +93,7 @@ Public Sub ProfilePowerQueries()
 
     ' Підключення, які щось завантажують (таблиця на аркуші або модель даних). «Лише підключення»
     ' під час Refresh не обчислюються, їхні 0,01-0,2 с нічого не вимірюють (аудит, v4.10)
-    Dim measured As New Collection, skipped As Long, warm As VbMsgBoxResult, c As Variant
+    Dim measured As New Collection, skipped As Long, warm As VbMsgBoxResult, c As Variant, pwr As String
     For Each conn In wb.Connections
         If IsOLEDBConnection(conn) Then
             If engFindQueryTable(QueryNameOf(conn)) Is Nothing And Not InModel(conn) Then
@@ -109,13 +109,14 @@ Public Sub ProfilePowerQueries()
         GoTo CleanExit
     End If
 
+    pwr = PowerSource()                  ' один раз для вікна запуску; у рядках - на момент заміру
     warm = MsgBox("Підключень для заміру: " & total & " (лише підключення пропущено: " & skipped & ")." & vbCrLf & vbCrLf & _
                   "Зробити прогрівальний прохід без запису?" & vbCrLf & _
                   "Перше оновлення платить за запуск Power Query і читання файлів з диска; прогрів робить" & vbCrLf & _
                   "заміри порівнянними, але подвоює час." & vbCrLf & vbCrLf & _
-                  "Живлення: " & PowerSource() & IIf(PowerSource() = "батарея", _
+                  "Живлення: " & pwr & IIf(pwr = "батарея", _
                   " - на батареї заміри непорівнянні; підключіть мережу і виберіть режим найкращої продуктивності.", ""), _
-                  vbYesNoCancel + IIf(PowerSource() = "батарея", vbExclamation, vbQuestion), "Power Query Profiler")
+                  vbYesNoCancel + IIf(pwr = "батарея", vbExclamation, vbQuestion), "Power Query Profiler")
     If warm = vbCancel Then GoTo CleanExit
 
     ' ручний режим обчислення: інакше кожне завантаження таблиці запускає перерахунок книги,
