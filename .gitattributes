@@ -1,9 +1,11 @@
-# Файли репозиторію створює макрос ExportPowerQueriesToRepo (modExportPowerQueryCodesToRepo).
+# Більшість файлів репозиторію створює макрос ExportPowerQueriesToRepo (modExportPowerQueryCodesToRepo);
+# tests\ і docs\ копіюються вручну з пакета Engine.
 
 # Модулі VBA: VBE експортує їх в ANSI (cp1251). У Git вони зберігаються в UTF-8 (кирилицю видно
 # на GitHub і в diff), на диску після checkout - знову cp1251 і CRLF, як очікує Import у VBE.
 # Не завантажуйте .bas/.cls/.frm через вебінтерфейс GitHub: він записує cp1251 як є,
 # і checkout падає з «failed to encode ... from UTF-8 to CP1251». Лише git add / commit / push.
+# Потрібен Git 2.18 або новіший (working-tree-encoding).
 *.bas text eol=crlf working-tree-encoding=CP1251
 *.cls text eol=crlf working-tree-encoding=CP1251
 *.frm text eol=crlf working-tree-encoding=CP1251
