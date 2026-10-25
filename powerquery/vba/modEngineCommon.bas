@@ -2,7 +2,7 @@ Attribute VB_Name = "modEngineCommon"
 Option Explicit
 
 ' ============================================================================
-' modEngineCommon: спільні процедури макросів Power Query Engine (аудит D13; v4.11)
+' modEngineCommon: спільні процедури макросів Power Query Engine (аудит D13; v4.13)
 '
 ' Імпортуйте разом із modSelectSourceFiles, modExportPowerQueryCodesToRepo,
 ' modPOWERQUERYPROFILER, modRunLog, modCleanExportSelectedSheets: вони викликають
@@ -15,6 +15,9 @@ Option Explicit
 ' ============================================================================
 
 Public Const ENG_SETTINGS_QUERY As String = "cfgSettings"
+' Запити, що оновлюються на вимогу, а не з «Оновити все» (рішення R3, v4.13): звіти якості
+' читають усі файли заново, Calendar залежить лише від tblPeriod
+Public Const ENG_ON_DEMAND_QUERIES As String = "|pq_QualitySummary|pq_QualityColumns|pq_QualityErrors|Calendar|"
 
 Private mSettings As Object      ' Scripting.Dictionary: ключ -> значення
 Private mNote As String          ' попередження останнього читання cfgSettings
@@ -360,14 +363,33 @@ Public Function engRefreshIfExcluded(queryName As String) As String
     Dim lo As ListObject, excluded As Boolean
     Set lo = engFindQueryTable(queryName)
     If lo Is Nothing Then Exit Function
+    ' лише таблиця запиту на аркуші; таблиця з моделі даних не має QueryTable (рецензія 25.10.2026)
+    If lo.SourceType <> xlSrcQuery Then Exit Function
     On Error Resume Next
     excluded = Not lo.QueryTable.WorkbookConnection.RefreshWithRefreshAll
-    If Err.Number <> 0 Then excluded = True: Err.Clear
+    If Err.Number <> 0 Then Err.Clear: Exit Function         ' позначку не прочитано - нічого не робимо
     If excluded Then
         lo.QueryTable.Refresh BackgroundQuery:=False
         If Err.Number <> 0 Then engRefreshIfExcluded = queryName & ": " & Err.Description
     End If
     On Error GoTo 0
+End Function
+
+' Підключення запитів ENG_ON_DEMAND_QUERIES, у яких досі стоїть позначка «Оновлювати під час
+' оновлення всіх» (наприклад, книга з версії до v4.13 або позначку повернули вручну).
+Public Function engOnDemandStillInRefreshAll() As Collection
+    Dim cn As WorkbookConnection, qn As String, res As New Collection, flagOn As Boolean
+    For Each cn In ThisWorkbook.Connections
+        qn = engQueryNameOf(cn)
+        If qn <> "" And InStr(1, ENG_ON_DEMAND_QUERIES, "|" & qn & "|", vbTextCompare) > 0 Then
+            flagOn = False
+            On Error Resume Next
+            flagOn = cn.RefreshWithRefreshAll
+            On Error GoTo 0
+            If flagOn Then res.Add cn
+        End If
+    Next cn
+    Set engOnDemandStillInRefreshAll = res
 End Function
 
 ' Синхронне «Оновити все»: фонове оновлення вимикається і потім відновлюється.
