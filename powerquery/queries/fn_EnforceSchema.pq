@@ -15,6 +15,14 @@ let
               else List.Select(Table.ColumnNames(raw), (c) => c <> Text.Trim(c) and List.Contains(Missing, Text.Trim(c))),
     SpacedHint = if List.IsEmpty(Spaced) then ""
                  else " У файлі є назви з пробілами на краях: '" & Text.Combine(Spaced, "', '") & "'.",
+    // підказка: у файлі є така сама назва в іншому регістрі (назви колонок не нормалізуються
+    // навмисно - діагностика замість мовчазного прирівнювання; рецензія коду 25.10.2026)
+    Cased   = if raw = null then {}
+              else List.Select(Table.ColumnNames(raw), (c) =>
+                       List.AnyTrue(List.Transform(Missing, (m) =>
+                           Text.Lower(Text.Trim(c)) = Text.Lower(m) and Text.Trim(c) <> m))),
+    CasedHint  = if List.IsEmpty(Cased) then ""
+                 else " У файлі є такі самі назви в іншому регістрі: '" & Text.Combine(Cased, "', '") & "'.",
 
     Data0   = fn_ApplyRules(raw, rules, Eff[Culture]),
     // Strict і поріг потребують перегляду даних до їх видачі: тоді один буфер замість 2-3 розборів
@@ -34,7 +42,8 @@ let
 
     V   = fn_LoadVerdict(Policy, Missing,
               () => not Table.IsEmpty(ErrRows), () => Rate, () => Eff[Threshold]),
-    Pct = (x as number) as text => Number.ToText(x, "P1", cfgSettings[Culture])
+    // культура джерела (реєстр -> cfgSettings), як і для типізації (рецензія коду 25.10.2026)
+    Pct = (x as number) as text => Number.ToText(x, "P1", Eff[Culture])
 in
     if not V[Stop] then
         (if Policy = "Lenient"
@@ -45,7 +54,7 @@ in
     else if V[Reason] = "ВідсутніОбов'язковіПоля" then
         error Error.Record(V[Reason],
             "У джерелі для '" & rules[TargetType] & "' відсутні обов'язкові колонки: "
-                & Text.Combine(Missing, ", ") & "." & SpacedHint, Missing)
+                & Text.Combine(Missing, ", ") & "." & SpacedHint & CasedHint, Missing)
     else if V[Reason] = "НевідомаПолітика" then
         error Error.Record(V[Reason],
             "ErrorPolicy має бути Strict, Report або Lenient, а не '" & Policy & "'.", Policy)
