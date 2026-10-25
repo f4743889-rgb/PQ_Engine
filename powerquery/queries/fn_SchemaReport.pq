@@ -8,16 +8,14 @@ let
     nRaw    = if raw = null then 0 else Table.RowCount(raw),
 
     // дублікати заголовків: Power Query лишає першу колонку з назвою, а повтори перейменовує
-    // на "Назва_1", "Назва_2"; дубль колонки схеми означає, що Engine мовчки бере першу копію
-    DupOf = (c as text) as nullable text =>
-        let
-            p    = Text.PositionOf(c, "_", Occurrence.Last),
-            base = if p > 0 then Text.Start(c, p) else null,
-            num  = if p > 0 then Text.Range(c, p + 1) else ""
-        in
-            if base <> null and num <> "" and Text.Select(num, {"0".."9"}) = num
-               and List.Contains(RawCols, base) then base else null,
-    DupBases    = List.Distinct(List.RemoveNulls(List.Transform(RawCols, DupOf))),
+    // на "Назва_1", "Назва_2"; дубль колонки схеми означає, що Engine мовчки бере першу копію.
+    // Повтори визначаються за сирим першим рядком файла (метадані RawHeaders від fn_ParseSource),
+    // тому законні колонки "A" і "A_1" не вважаються дублем (v4.15, CR-01). Без метаданих
+    // (таблиця Excel - назви унікальні за визначенням) дублікатів немає.
+    RawHdr      = if raw = null then {}
+                  else List.Select(Record.FieldOrDefault(Value.Metadata(raw), "RawHeaders", {}), each _ <> ""),
+    DupBases    = List.Distinct(List.Select(RawHdr,
+                      (h) => List.Count(List.Select(RawHdr, each _ = h)) > 1)),
     DupInSchema = List.Select(DupBases, each List.Contains(rules[SourceCols], _)),
 
     // той самий конвеєр, що в Enforcer, але без політики: помилки лишаються в клітинках
