@@ -174,20 +174,30 @@ Private Function HasCode(comp As Object) As Boolean
 End Function
 
 ' ================== queries.yml ==================
+' Сортування рядків за абеткою однаково на будь-якій машині: порівняння LCase$ за кодами
+' символів (vbBinaryCompare), а не за правилами мови Windows (vbTextCompare) - інакше порядок
+' у queries.yml і README залежав би від регіональних налаштувань (рецензія 25.10.2026)
+Private Sub SortStrings(ByRef arr() As String)
+    Dim i As Long, j As Long, tmp As String
+    For i = LBound(arr) To UBound(arr) - 1
+        For j = i + 1 To UBound(arr)
+            If StrComp(LCase$(arr(j)), LCase$(arr(i)), vbBinaryCompare) < 0 Then
+                tmp = arr(i): arr(i) = arr(j): arr(j) = tmp
+            End If
+        Next j
+    Next i
+End Sub
+
 ' Запити книги за абеткою: порядок ThisWorkbook.Queries змінюється, коли запит видаляють і
 ' імпортують знову, і queries.yml та README «змінювалися» б без змін у коді
 Private Function SortedQueries() As Collection
-    Dim q As WorkbookQuery, gk() As String, i As Long, j As Long, tmp As String, res As New Collection
+    Dim q As WorkbookQuery, gk() As String, i As Long, res As New Collection
     If ThisWorkbook.Queries.Count = 0 Then Set SortedQueries = res: Exit Function
     ReDim gk(0 To ThisWorkbook.Queries.Count - 1)
     For Each q In ThisWorkbook.Queries
         gk(i) = q.Name: i = i + 1
     Next q
-    For i = 0 To UBound(gk) - 1
-        For j = i + 1 To UBound(gk)
-            If StrComp(gk(j), gk(i), vbTextCompare) < 0 Then tmp = gk(i): gk(i) = gk(j): gk(j) = tmp
-        Next j
-    Next i
+    SortStrings gk
     For i = 0 To UBound(gk)
         res.Add ThisWorkbook.Queries(gk(i))
     Next i
@@ -394,7 +404,7 @@ End Function
 ' Запити за теками cfgQueryGroups (теки за назвою: «00 …», «01 …»), посилання на .pq
 Private Function QueriesSection() As String
     Dim qNames As Object, byGroup As Object, q As WorkbookQuery, ids As Object, dep As Variant
-    Dim g As String, hasDeps As Boolean, gk() As String, i As Long, j As Long, tmp As String, t As String
+    Dim g As String, hasDeps As Boolean, gk() As String, i As Long, t As String
 
     Set qNames = CreateObject("Scripting.Dictionary")
     qNames.CompareMode = vbBinaryCompare
@@ -422,11 +432,7 @@ Private Function QueriesSection() As String
     For Each dep In byGroup.Keys
         gk(i) = CStr(dep): i = i + 1
     Next dep
-    For i = 0 To UBound(gk) - 1
-        For j = i + 1 To UBound(gk)
-            If StrComp(gk(j), gk(i), vbTextCompare) < 0 Then tmp = gk(i): gk(i) = gk(j): gk(j) = tmp
-        Next j
-    Next i
+    SortStrings gk
 
     t = "## Запити Power Query" & vbCrLf & vbCrLf & _
         "Тека — як у редакторі Power Query (" & GROUPS_QUERY & "); тип і залежності — у metadata/queries.yml." & vbCrLf
@@ -441,7 +447,7 @@ End Function
 Private Function MacrosSection() As String
     Dim proj As Object, comp As Object, cm As Object, i As Long, s As String, t As String
     Dim desc As String, subs As String, nm As String, why As String
-    Dim macroRows As Object, gk() As String, j As Long, tmp As String, mk As Variant
+    Dim macroRows As Object, gk() As String, mk As Variant
 
     t = "## Макроси VBA" & vbCrLf & vbCrLf
     why = VbaAccessProblem(proj)
@@ -477,11 +483,7 @@ Private Function MacrosSection() As String
         For Each mk In macroRows.Keys
             gk(i) = CStr(mk): i = i + 1
         Next mk
-        For i = 0 To UBound(gk) - 1
-            For j = i + 1 To UBound(gk)
-                If StrComp(gk(j), gk(i), vbTextCompare) < 0 Then tmp = gk(i): gk(i) = gk(j): gk(j) = tmp
-            Next j
-        Next i
+        SortStrings gk
         For i = 0 To UBound(gk)
             t = t & macroRows(gk(i))
         Next i

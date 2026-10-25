@@ -45,8 +45,24 @@ Public Sub RefreshWithRunLog()
         Set qs = engLoadQueryToSheet(SUMMARY_QUERY, EnsureSheet(QUALITY_SHEET), "A3", False)
     End If
 
-    ' Звіти якості з v4.13 вимкнено з «Оновити все» (оновлюються на вимогу). Позначку підключення
-    ' макрос не змінює: після «Оновити все» він сам оновлює зведення, якщо воно вимкнене.
+    ' Звіти якості й Calendar з v4.13 оновлюються на вимогу. Якщо в якогось із них досі стоїть
+    ' позначка «Оновлювати під час оновлення всіх», «Оновити все» рахуватиме їх щоразу -
+    ' пропонуємо зняти (рецензія 25.10.2026). Після «Оновити все» зведення оновлюється окремо.
+    Dim onAll As Collection, cn As Variant, wc As WorkbookConnection, names_ As String
+    Set onAll = engOnDemandStillInRefreshAll()
+    If onAll.Count > 0 Then
+        For Each cn In onAll
+            Set wc = cn
+            names_ = names_ & vbCrLf & "  * " & engQueryNameOf(wc)
+        Next cn
+        If MsgBox("Ці запити мають оновлюватися на вимогу, але досі оновлюються з «Оновити все»:" & names_ & _
+                  vbCrLf & vbCrLf & "Зняти позначку «Оновлювати під час оновлення всіх» зараз?", _
+                  vbYesNo + vbQuestion, "Журнал запусків") = vbYes Then
+            For Each cn In onAll
+                cn.RefreshWithRefreshAll = False
+            Next cn
+        End If
+    End If
 
     runAt = Now
     t0 = Timer
