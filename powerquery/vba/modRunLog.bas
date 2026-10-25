@@ -2,7 +2,7 @@ Attribute VB_Name = "modRunLog"
 Option Explicit
 
 ' ============================================================================
-' modRunLog: оновлення книги з журналом запусків (етап D; v4.11)
+' modRunLog: оновлення книги з журналом запусків (етап D; v4.13)
 ' Потребує modEngineCommon.
 '
 ' RefreshWithRunLog:
@@ -40,21 +40,13 @@ Public Sub RefreshWithRunLog()
     If qs Is Nothing Then
         If MsgBox("Запит " & SUMMARY_QUERY & " не завантажено на аркуш, а журнал будується з нього." & _
                   vbCrLf & vbCrLf & "Завантажити його на аркуш «" & QUALITY_SHEET & "» і продовжити?" & _
-                  vbCrLf & "(одноразово; далі таблиця оновлюватиметься разом з усіма)", _
+                  vbCrLf & "(одноразово; таблиця не оновлюється з «Оновити все» - її оновлює цей макрос)", _
                   vbYesNo + vbQuestion, "Журнал запусків") = vbNo Then Exit Sub
-        Set qs = engLoadQueryToSheet(SUMMARY_QUERY, EnsureSheet(QUALITY_SHEET), "A3")
+        Set qs = engLoadQueryToSheet(SUMMARY_QUERY, EnsureSheet(QUALITY_SHEET), "A3", False)
     End If
 
-    ' Таблиця зведення має оновлюватися разом з «Оновити все» (позначка підключення
-    ' «Оновлювати під час оновлення всіх»); якщо позначки немає - вмикаємо її
-    Dim refreshAllOk As Boolean
-    On Error Resume Next
-    With qs.QueryTable.WorkbookConnection
-        If Not .RefreshWithRefreshAll Then .RefreshWithRefreshAll = True
-        refreshAllOk = (Err.Number = 0 And .RefreshWithRefreshAll)
-    End With
-    Err.Clear
-    On Error GoTo Fail
+    ' Звіти якості з v4.13 вимкнено з «Оновити все» (оновлюються на вимогу). Позначку підключення
+    ' макрос не змінює: після «Оновити все» він сам оновлює зведення, якщо воно вимкнене.
 
     runAt = Now
     t0 = Timer
@@ -73,21 +65,14 @@ Public Sub RefreshWithRunLog()
         Exit Sub
     End If
 
-    ' Друге оновлення - лише якщо не вдалося переконатися, що «Оновити все» оновлює таблицю
-    ' зведення (інакше це ще одне повне читання всіх файлів-джерел)
-    If Not refreshAllOk Then
-        Dim sumErr As String
-        Application.StatusBar = "Оновлення " & SUMMARY_QUERY & "..."
-        On Error Resume Next
-        qs.QueryTable.Refresh BackgroundQuery:=False
-        If Err.Number <> 0 Then sumErr = Err.Description
-        Err.Clear
-        On Error GoTo Fail
-        Application.StatusBar = False
-        dur = Timer - t0
-        If dur < 0 Then dur = dur + 86400
-        If sumErr <> "" Then refreshErr = refreshErr & IIf(refreshErr = "", "", "; ") & SUMMARY_QUERY & ": " & sumErr
-    End If
+    ' Зведення вимкнено з «Оновити все» - оновлюємо його окремо (одне читання файлів-джерел)
+    Dim sumErr As String
+    Application.StatusBar = "Оновлення " & SUMMARY_QUERY & "..."
+    sumErr = engRefreshIfExcluded(SUMMARY_QUERY)
+    Application.StatusBar = False
+    dur = Timer - t0
+    If dur < 0 Then dur = dur + 86400
+    If sumErr <> "" Then refreshErr = refreshErr & IIf(refreshErr = "", "", "; ") & sumErr
     Set qs = engFindQueryTable(SUMMARY_QUERY)
     Set reg = engFindTable(engTableName("Registry"))
     Set lg = EnsureLogTable()
