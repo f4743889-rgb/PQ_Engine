@@ -381,10 +381,14 @@ End Sub
 
 ' ================== ОНОВЛЕННЯ І ЗВЕДЕННЯ ЯКОСТІ ==================
 Private Sub RefreshAndReport()
-    Dim errText As String, msg As String
+    Dim errText As String, msg As String, sErr As String
     Application.Cursor = xlWait
     Application.StatusBar = "Оновлення запитів..."
     errText = engRefreshAllSync()
+    ' зведення якості вимкнено з «Оновити все» (v4.13): оновлюємо його для підсумку QualityFlag
+    Application.StatusBar = "Оновлення " & SUMMARY_QUERY & "..."
+    sErr = engRefreshIfExcluded(SUMMARY_QUERY)
+    If sErr <> "" Then errText = errText & IIf(errText = "", "", "; ") & sErr
     Application.Cursor = xlDefault
     Application.StatusBar = False
     If errText <> "" Then msg = "Оновлення завершилося з помилкою: " & errText & vbCrLf & vbCrLf

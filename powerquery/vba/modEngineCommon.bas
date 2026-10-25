@@ -323,7 +323,10 @@ End Function
 ' або lo.QueryTable.Refresh). Якщо запит уже завантажено, повертає наявну таблицю.
 ' Правила hlpProject: таблиця називається як запит (q_, pq_, test_ - роль видно з назви),
 ' шапка не вище рядка 3 (topLeft за замовчуванням A3).
-Public Function engLoadQueryToSheet(queryName As String, ws As Worksheet, Optional topLeft As String = "A3") As ListObject
+' refreshWithAll: позначка підключення «Оновлювати під час оновлення всіх». Звіти якості й Calendar
+' з v4.13 вимкнено з «Оновити все» (оновлюються на вимогу), тому для них передають False.
+Public Function engLoadQueryToSheet(queryName As String, ws As Worksheet, Optional topLeft As String = "A3", _
+                                    Optional refreshWithAll As Boolean = True) As ListObject
     Dim lo As ListObject
     Set lo = engFindQueryTable(queryName)
     If Not lo Is Nothing Then Set engLoadQueryToSheet = lo: Exit Function
@@ -344,10 +347,27 @@ Public Function engLoadQueryToSheet(queryName As String, ws As Worksheet, Option
         .PreserveColumnInfo = True
     End With
     On Error Resume Next
-    lo.QueryTable.WorkbookConnection.RefreshWithRefreshAll = True     ' оновлювати разом з «Оновити все»
+    lo.QueryTable.WorkbookConnection.RefreshWithRefreshAll = refreshWithAll
     lo.Name = queryName
     On Error GoTo 0
     Set engLoadQueryToSheet = lo
+End Function
+
+' Оновлює таблицю запиту, якщо її підключення вимкнено з «Оновити все» (звіти якості, v4.13).
+' Викликати після engRefreshAllSync, коли потрібні свіжі дані такої таблиці. Повертає "" або текст
+' помилки; якщо таблиці немає або вона й так оновлюється з усіма - нічого не робить.
+Public Function engRefreshIfExcluded(queryName As String) As String
+    Dim lo As ListObject, excluded As Boolean
+    Set lo = engFindQueryTable(queryName)
+    If lo Is Nothing Then Exit Function
+    On Error Resume Next
+    excluded = Not lo.QueryTable.WorkbookConnection.RefreshWithRefreshAll
+    If Err.Number <> 0 Then excluded = True: Err.Clear
+    If excluded Then
+        lo.QueryTable.Refresh BackgroundQuery:=False
+        If Err.Number <> 0 Then engRefreshIfExcluded = queryName & ": " & Err.Description
+    End If
+    On Error GoTo 0
 End Function
 
 ' Синхронне «Оновити все»: фонове оновлення вимикається і потім відновлюється.
