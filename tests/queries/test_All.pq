@@ -23,7 +23,8 @@ let
         Safe("test_NullCounts", () => test_NullCounts[Pass]),
         Safe("test_AuditFixes", () => test_AuditFixes[Pass]),
         Safe("test_HeadersConsistency", () => test_HeadersConsistency[Pass]),
-        Safe("test_RowFilters", () => test_RowFilters[Pass])
+        Safe("test_RowFilters", () => test_RowFilters[Pass]),
+        Safe("test_FlagVsLoad", () => test_FlagVsLoad[Pass])
     },
     T = Table.FromRecords(Rows,
             type table [Suite = text, Checks = Int64.Type, Failed = Int64.Type, Error = nullable text])

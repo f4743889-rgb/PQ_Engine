@@ -35,6 +35,8 @@ csv('C08_missing_optional.csv', [h for h in HDR if h != 'Дата'], [[v for i, 
 csv('C09_dup_header.csv', ['Код', 'Назва', 'Кількість', 'Ціна, грн.', 'Дата', 'Назва'],
     [r[:5] + ['ХИБНА ' + r[0]] for r in GOOD])
 csv('C10_empty.csv', HDR, [])
+# C18: законні колонки «Назва» і «Назва_1» - не дубль (рецензія коду 25.10.2026, CR-01)
+csv('C18_legit_suffix.csv', HDR + ['Назва_1'], [r + ['Інша назва ' + r[0]] for r in GOOD])
 csv('C13_utf8_no_bom.csv', HDR, GOOD, enc='utf-8')
 csv('C14_cp1251.csv', HDR, GOOD, enc='cp1251')
 csv('C15_disabled.csv', HDR, GOOD)
@@ -91,6 +93,7 @@ REG = [
     ['C15', 'TestCsv', 'C15_disabled.csv', None, 'Квартал', 4, None, False, None, None, 'Enabled = FALSE'],
     ['C16', 'TestCsv', 'C16_dup_period.csv', None, 'Місяць', 1, None, None, None, None, 'Той самий період, що C01'],
     ['C17', 'TestCsv', 'C01_ok.csv', None, 'Квартал', 3, None, None, None, None, 'Той самий файл, що C01'],
+    ['C18', 'TestCsv', 'C18_legit_suffix.csv', None, 'Рік', 1, None, None, None, None, 'Законні колонки Назва і Назва_1'],
     ['X01', 'TestXlsx', 'X01_table.xlsx', 'tblData', 'Місяць', 1, None, None, None, None, 'Таблиця за іменем, рядок Всього'],
     ['X02', 'TestXlsx', 'X02_na_error.xlsx', 'Аркуш1', 'Місяць', 2, None, None, None, None, 'Аркуш, клітинка #N/A'],
     ['X03', 'TestXlsx', 'X03_wrong_sheet.xlsx', 'НемаТакого', 'Місяць', 3, None, None, None, None, 'Неіснуючий TableSheetName'],
@@ -136,6 +139,7 @@ EXP = [
     ['C15', 'ABSENT', None, None, None, None, None, None, None, 'Вимкнене джерело відсутнє у зведенні'],
     ['C16', 'OK', 'OK', 5, None, None, None, None, None, None],
     ['C17', 'OK', 'OK', 5, None, None, None, None, None, None],
+    ['C18', 'OK', 'OK', 5, None, 0, '-', '-', '-', 'Назва_1 - окрема колонка, не дубль'],
     ['X01', 'OK', 'OK', 5, 1, 0, None, None, None, None],
     ['X02', 'ERROR', 'WARN', 5, None, 1, None, None, None, '#N/A у джерелі'],
     ['X03', 'READ_ERROR', 'FAIL', None, None, None, None, None, None, None],
