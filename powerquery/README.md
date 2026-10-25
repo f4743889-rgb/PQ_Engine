@@ -57,6 +57,7 @@
 | Таблиця | Аркуш | Тип | Запит | Призначення | Довідка |
 | --- | --- | --- | --- | --- | --- |
 | pq_ExtractedColumns | pq_ExtractedColumns | Результат запиту | pq_ExtractedColumns | Результат запиту pq_ExtractedColumns. |  |
+| pq_QualitySummary | pq_QualitySummary | Результат запиту | pq_QualitySummary | Зведення якості по джерелах (Status, QualityFlag, кількість рядків і помилок). |  |
 | tblSourceRegistry | CONFIG | Ручна |  | Реєстр джерел: один рядок = один файл (SourceID, призначення, шлях, період, політика помилок). | [hlpSourceRegistry](#hlpsourceregistry) |
 | tblSchemaRegistry | SCHEMA | Ручна |  | Схема даних: колонки кожного призначення, цільові назви, типи, обов'язковість, перетворення. | [hlpSchemaRegistry](#hlpschemaregistry) |
 | tblDefaultHeaders | TEMPLATES | Ручна |  | Шаблон заголовків призначення на випадок, коли шлях до файла не задано. |  |
@@ -149,75 +150,75 @@
 ### 00 Конфігурація
 
 - [cfgQueryGroups](<queries/cfgQueryGroups.pq>) — Config
-- [cfgSettings](<queries/cfgSettings.pq>) — Config — Централізований конфіг
-- [cfgTypeMap](<queries/cfgTypeMap.pq>) — Config — Карта типів даних: значення DataType схеми → тип M
-- [cfgTransforms](<queries/cfgTransforms.pq>) — Standalone — Білий список дій. Stage визначає, до чи після типізації виконується дія. Додавати нові дії можна лише тут. Назви дій порівнюються без урахування регістру
 - [cfgReportTypes](<queries/cfgReportTypes.pq>) — Config
+- [cfgSettings](<queries/cfgSettings.pq>) — Config — Централізований конфіг
 - [cfgStatuses](<queries/cfgStatuses.pq>) — Config
+- [cfgTransforms](<queries/cfgTransforms.pq>) — Standalone — Білий список дій. Stage визначає, до чи після типізації виконується дія. Додавати нові дії можна лише тут. Назви дій порівнюються без урахування регістру
+- [cfgTypeMap](<queries/cfgTypeMap.pq>) — Config — Карта типів даних: значення DataType схеми → тип M
 - [fn_LoadConfig](<queries/fn_LoadConfig.pq>) — Function
-- [fn_NormalizeSchema](<queries/fn_NormalizeSchema.pq>) — Function
 - [fn_NormalizeRowFilters](<queries/fn_NormalizeRowFilters.pq>) — Function
+- [fn_NormalizeSchema](<queries/fn_NormalizeSchema.pq>) — Function
 - [src_SchemaRegistry](<queries/src_SchemaRegistry.pq>) — Transform
 
 ### 01 Утиліти
 
+- [fn_Canon](<queries/fn_Canon.pq>) — Function
+- [fn_Opt](<queries/fn_Opt.pq>) — Function — значення з реєстру або дефолт; порожня клітинка = дефолт
 - [fn_ToBool](<queries/fn_ToBool.pq>) — Function — Гнучке приведення до logical
 - [fn_ToRate](<queries/fn_ToRate.pq>) — Function — Розбір ErrorThreshold: число, відсоток або текст → частка 0..1, off → вимкнено
-- [fn_Opt](<queries/fn_Opt.pq>) — Function — значення з реєстру або дефолт; порожня клітинка = дефолт
-- [fn_Canon](<queries/fn_Canon.pq>) — Function
 - [fn_TypeKey](<queries/fn_TypeKey.pq>) — Function — нормалізація значення DataType: Int64.Type → int64
 
 ### 02 Читання джерел
 
 - [fn_ActiveSources](<queries/fn_ActiveSources.pq>) — Function — визначення «активного джерела» (Enabled, порожнє = TRUE)
-- [fn_SourcePath](<queries/fn_SourcePath.pq>) — Function — Шлях до файла рядка реєстру: FullPath або Path + FileName
 - [fn_Options](<queries/fn_Options.pq>) — Function — Формування опцій обробки для парсерів
-- [fn_ResolveSource](<queries/fn_ResolveSource.pq>) — Function — єдине місце, де відкривається файл; помилки як дані
-- [fn_ParseSource](<queries/fn_ParseSource.pq>) — Function — чистий парсер повних даних
 - [fn_ParseHeaders](<queries/fn_ParseHeaders.pq>) — Function — Точний та швидкий парсер заголовків
+- [fn_ParseSource](<queries/fn_ParseSource.pq>) — Function — чистий парсер повних даних
 - [fn_ReadSource](<queries/fn_ReadSource.pq>) — Function — Головна функція завантаження даних
+- [fn_ResolveSource](<queries/fn_ResolveSource.pq>) — Function — єдине місце, де відкривається файл; помилки як дані
+- [fn_SourcePath](<queries/fn_SourcePath.pq>) — Function — Шлях до файла рядка реєстру: FullPath або Path + FileName
 - [fn_TemplateColumns](<queries/fn_TemplateColumns.pq>) — Function — єдине місце читання шаблонів
 
 ### 03 Перевірка налаштувань
 
 - [fn_RegistryIssues](<queries/fn_RegistryIssues.pq>) — Function
 - [pq_RegistryCheck](<queries/pq_RegistryCheck.pq>) — Transform — перевірка реєстру джерел перед обробкою
-- [pq_SchemaCheck](<queries/pq_SchemaCheck.pq>) — Transform — Перевірка самої схеми. Порожній результат означає, що схема в порядку
 - [pq_RowFiltersCheck](<queries/pq_RowFiltersCheck.pq>) — Transform
+- [pq_SchemaCheck](<queries/pq_SchemaCheck.pq>) — Transform — Перевірка самої схеми. Порожній результат означає, що схема в порядку
 
 ### 04 Каталог і дрейф схеми
 
-- [pq_GenerateSchemaTemplate](<queries/pq_GenerateSchemaTemplate.pq>) — Transform — Генератор схеми зі статусами
 - [pq_ExtractedColumns](<queries/pq_ExtractedColumns.pq>) — Transform — унікальні колонки на призначення
-- [pq_SchemaIssues](<queries/pq_SchemaIssues.pq>) — Transform — таблиця для аркуша: які джерела не дали заголовків і чому
+- [pq_GenerateSchemaTemplate](<queries/pq_GenerateSchemaTemplate.pq>) — Transform — Генератор схеми зі статусами
 - [pq_SchemaDrift](<queries/pq_SchemaDrift.pq>) — Transform — схема проти реальних файлів
+- [pq_SchemaIssues](<queries/pq_SchemaIssues.pq>) — Transform — таблиця для аркуша: які джерела не дали заголовків і чому
 
 ### 05 Нормалізація
 
-- [fn_GetSchemaRules](<queries/fn_GetSchemaRules.pq>) — Function — «компілює» схему призначення в запис правил
 - [fn_ApplyRowFilters](<queries/fn_ApplyRowFilters.pq>) — Function — відсікання службових рядків до типізації
-- [fn_ApplyRulesEx](<queries/fn_ApplyRulesEx.pq>) — Function
 - [fn_ApplyRules](<queries/fn_ApplyRules.pq>) — Function — конвеєр без перевірок і політик
+- [fn_ApplyRulesEx](<queries/fn_ApplyRulesEx.pq>) — Function
 - [fn_EffectiveSettings](<queries/fn_EffectiveSettings.pq>) — Function
-- [fn_LoadVerdict](<queries/fn_LoadVerdict.pq>) — Function
 - [fn_EnforceSchema](<queries/fn_EnforceSchema.pq>) — Function — перевірка обов'язкових колонок і застосування політики помилок
+- [fn_GetSchemaRules](<queries/fn_GetSchemaRules.pq>) — Function — «компілює» схему призначення в запис правил
+- [fn_LoadVerdict](<queries/fn_LoadVerdict.pq>) — Function
 
 ### 06 Якість даних
 
-- [fn_SchemaReport](<queries/fn_SchemaReport.pq>) — Function — звіт про відповідність даних схемі (не залежить від ErrorPolicy)
-- [fn_RowReport](<queries/fn_RowReport.pq>) — Function — звіт якості для одного рядка реєстру
+- [fn_ColumnNullCounts](<queries/fn_ColumnNullCounts.pq>) — Function
 - [fn_QcReports](<queries/fn_QcReports.pq>) — Function
+- [fn_RowReport](<queries/fn_RowReport.pq>) — Function — звіт якості для одного рядка реєстру
+- [fn_SchemaReport](<queries/fn_SchemaReport.pq>) — Function — звіт про відповідність даних схемі (не залежить від ErrorPolicy)
 - [fn_SummaryTable](<queries/fn_SummaryTable.pq>) — Function
-- [pq_QualitySummary](<queries/pq_QualitySummary.pq>) — Transform
 - [pq_QualityColumns](<queries/pq_QualityColumns.pq>) — Transform
 - [pq_QualityErrors](<queries/pq_QualityErrors.pq>) — Transform
-- [fn_ColumnNullCounts](<queries/fn_ColumnNullCounts.pq>) — Function
+- [pq_QualitySummary](<queries/pq_QualitySummary.pq>) — Transform
 
 ### 07 Призначення
 
 - [fn_ReadPurpose](<queries/fn_ReadPurpose.pq>) — Function — Читання й об'єднання файлів призначення
-- [q_Registry](<queries/q_Registry.pq>) — Transform
 - [q_GO](<queries/q_GO.pq>) — Transform
+- [q_Registry](<queries/q_Registry.pq>) — Transform
 
 ### 08 Модель і звіт
 
@@ -230,13 +231,13 @@
 
 | Модуль | Макроси (Alt+F8) | Опис |
 | --- | --- | --- |
-| [modEngineCommon](<vba/modEngineCommon.bas>) |  | спільні процедури макросів Power Query Engine (аудит D13; v4.11) |
 | [modCleanExportSelectedSheets](<vba/modCleanExportSelectedSheets.bas>) | CleanExportSelectedSheets | експорт виділених аркушів в окремі книги без запитів і зв'язків (v4.11) |
+| [modEngineCommon](<vba/modEngineCommon.bas>) |  | спільні процедури макросів Power Query Engine (аудит D13; v4.11) |
 | [modExportPowerQueryCodesToRepo](<vba/modExportPowerQueryCodesToRepo.bas>) | ExportPowerQueriesToRepo | експорт коду Power Query, таблиць, модулів VBA і README для Git (v4.11) |
 | [modImportPowerQueryFromFolder](<vba/modImportPowerQueryFromFolder.bas>) | ImportPQQueriesFromFolder | імпорт або оновлення запитів Power Query з файлів .pq (v4.11) |
+| [modPOWERQUERYPROFILER](<vba/modPOWERQUERYPROFILER.bas>) | ProfilePowerQueries | час оновлення кожного підключення Power Query (етап D; v4.12) |
 | [modRunLog](<vba/modRunLog.bas>) | RefreshWithRunLog | оновлення книги з журналом запусків (етап D; v4.11) |
 | [modSelectSourceFiles](<vba/modSelectSourceFiles.bas>) | SelectSourceFiles | вибір файлів-джерел для рядків tblSourceRegistry |
 | [modSetupTestEngine](<vba/modSetupTestEngine.bas>) | SetupTestEngine | перетворення КОПІЇ книги Engine на тестову (етап C; v4.11) |
-| [modPOWERQUERYPROFILER](<vba/modPOWERQUERYPROFILER.bas>) | ProfilePowerQueries | час оновлення кожного підключення Power Query (етап D; v4.12) |
 | [modTableCatalog](<vba/modTableCatalog.bas>) | UpdateHelp | каталог таблиць книги, підписи над таблицями і довідка (v4.11) |
 
